@@ -1,0 +1,55 @@
+{
+  "name": "@stately-cloud/schema",
+  "version": "0.1.1",
+  "author": "Stately Cloud <support@stately.cloud> (https://stately.cloud/)",
+  "description": "Schema language for StatelyDB",
+  "types": "dist/index.d.ts",
+  "module": "dist/index.js",
+  "type": "module",
+  "files": [
+    "package.json",
+    "README.md",
+    "LICENSE.txt",
+    "dist/**"
+  ],
+  "bin": "./dist/cli.js",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./driver": {
+      "default": "./dist/driver.js",
+      "types": "./dist/driver.d.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig-build.json",
+    "start": "node dist/cli.js",
+    "fix:prettier": "prettier --write 'src/**/*.ts'",
+    "lint:prettier": "prettier 'src/**/*.ts'",
+    "lint": "eslint 'src/**/*.ts'",
+    "fix:eslint": "eslint --fix 'src/**/*.ts'",
+    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest"
+  },
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@stately-cloud/eslint": "workspace:*",
+    "@types/jest": "29.5.12",
+    "@types/node": "20.14.8",
+    "eslint": "8.57.0",
+    "jest": "29.7.0",
+    "ts-jest": "29.1.5"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^1.9.0",
+    "fast-equals": "^5.0.1",
+    "tsx": "^4.7.1",
+    "typescript": "5.5.2"
+  }
+}
