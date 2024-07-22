@@ -1,23 +1,24 @@
-import {
-  DescriptorProto,
-  DescriptorProto_ReservedRange,
-  FieldDescriptorProto,
-  MessageOptions,
-  setExtension,
-} from "@bufbuild/protobuf";
+import { create, setExtension } from "@bufbuild/protobuf";
 import { message as messageExtension } from "./extensions_pb.js";
 import { Field, field } from "./fields.js";
 import {
-  MessageOptions_Index,
-  MessageOptions_KeyPath,
-  MessageOptions as StatelyMessageOptions,
-  Ttl,
+  MessageOptions_IndexSchema,
+  MessageOptions_KeyPathSchema,
+  MessageOptionsSchema as StatelyMessageOptionsSchema,
   Ttl_TtlSource,
+  TtlSchema,
 } from "./options_pb.js";
 import { Plural, resolveDeferred, resolvePlural } from "./type-util.js";
 import { SchemaType } from "./types.js";
 
-import { TypeDefinitionError, getRegisteredType, registerType } from "./type-registry.js";
+import {
+  DescriptorProto,
+  DescriptorProto_ReservedRangeSchema,
+  DescriptorProtoSchema,
+  FieldDescriptorProto,
+  MessageOptionsSchema,
+} from "@bufbuild/protobuf/wkt";
+import { getRegisteredType, registerType, TypeDefinitionError } from "./type-registry.js";
 import { validateName } from "./validate.js";
 
 /**
@@ -181,19 +182,19 @@ export function itemType(name: string, itemTypeConfig: ItemTypeConfig): SchemaTy
     // TODO: It would be nice to accumulate errors and return them all at once
     throw new Error(`Invalid item type name: ${name}`);
   }
-  const message = new DescriptorProto({
+  const message = create(DescriptorProtoSchema, {
     name,
   });
-  const statelyOptions = new StatelyMessageOptions();
+  const statelyOptions = create(StatelyMessageOptionsSchema);
 
   // keyPath
   for (const keyPath of resolvePlural(itemTypeConfig.keyPath)) {
-    statelyOptions.keyPaths.push(new MessageOptions_KeyPath({ pathTemplate: keyPath }));
+    statelyOptions.keyPaths.push(create(MessageOptions_KeyPathSchema, { pathTemplate: keyPath }));
   }
 
   // TTL
   if (itemTypeConfig.ttl) {
-    statelyOptions.ttl = new Ttl({
+    statelyOptions.ttl = create(TtlSchema, {
       source: ttlSourceConvert[itemTypeConfig.ttl.source],
     });
 
@@ -215,7 +216,7 @@ export function itemType(name: string, itemTypeConfig: ItemTypeConfig): SchemaTy
   // Indexes
   for (const index of itemTypeConfig.indexes ?? []) {
     statelyOptions.indexes.push(
-      new MessageOptions_Index({
+      create(MessageOptions_IndexSchema, {
         groupLocalIndex: index.groupLocalIndex,
         propertyPath: index.field,
       }),
@@ -223,7 +224,7 @@ export function itemType(name: string, itemTypeConfig: ItemTypeConfig): SchemaTy
   }
 
   // set custom options
-  message.options = new MessageOptions();
+  message.options = create(MessageOptionsSchema);
   setExtension(message.options, messageExtension, statelyOptions);
 
   // Set the cache early to stop infinite recursion
@@ -256,7 +257,7 @@ export function objectType(name: string, itemTypeConfig: ObjectTypeConfig): Sche
   if (cachedType) {
     return cachedType;
   }
-  const message = new DescriptorProto({
+  const message = create(DescriptorProtoSchema, {
     name,
   });
 
@@ -348,7 +349,7 @@ function populateReserved(
       lastRange.end++;
     } else {
       message.reservedRange.push(
-        new DescriptorProto_ReservedRange({ start: fieldNum, end: fieldNum + 1 }),
+        create(DescriptorProto_ReservedRangeSchema, { start: fieldNum, end: fieldNum + 1 }),
       );
     }
   }

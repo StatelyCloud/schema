@@ -1,11 +1,11 @@
+import { getExtension, hasExtension, isMessage } from "@bufbuild/protobuf";
 import {
   DescriptorProto,
+  DescriptorProtoSchema,
   EnumDescriptorProto,
   FieldDescriptorProto_Label,
   FieldDescriptorProto_Type,
-  getExtension,
-  hasExtension,
-} from "@bufbuild/protobuf";
+} from "@bufbuild/protobuf/wkt";
 import { message } from "./extensions_pb.js";
 import { getRegisteredType, registerType } from "./type-registry.js";
 import { Deferred, resolveDeferred } from "./type-util.js";
@@ -250,7 +250,7 @@ export function pointerTo(dest: Deferred<SchemaType>): Deferred<SchemaType> {
  */
 export function isItemType(type: SchemaType): boolean {
   const { underlyingType } = resolveType(type);
-  if (!(underlyingType instanceof DescriptorProto)) {
+  if (!isMessage(underlyingType, DescriptorProtoSchema)) {
     return false;
   }
 

@@ -1,4 +1,5 @@
-import { FileDescriptorSet } from "@bufbuild/protobuf";
+import { create, toBinary } from "@bufbuild/protobuf";
+import { FileDescriptorSetSchema } from "@bufbuild/protobuf/wkt";
 import path from "node:path";
 import process from "node:process";
 import { tsImport } from "tsx/esm/api";
@@ -74,12 +75,12 @@ export async function build(inputPath: string, fileName: string) {
     // Process into a FileDescriptorProto
     const fd = file(exportedValues, fileName);
 
-    const fds = new FileDescriptorSet({
+    const fds = create(FileDescriptorSetSchema, {
       file: [fd],
     });
 
     // Export the FileDescriptorProto to the output path
-    const fdBytes = fds.toBinary();
+    const fdBytes = toBinary(FileDescriptorSetSchema, fds);
 
     // Write the file
     await new Promise((resolve, reject) =>

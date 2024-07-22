@@ -1,36 +1,36 @@
+import { create, isMessage, setExtension } from "@bufbuild/protobuf";
+import { GenDescMessage } from "@bufbuild/protobuf/codegenv1";
 import {
-  EnumDescriptorProto,
+  EnumDescriptorProtoSchema,
   FieldDescriptorProto,
+  FieldDescriptorProtoSchema,
   FieldDescriptorProto_Type,
-  FieldOptions,
-  Message,
-  PartialMessage,
-  setExtension,
-} from "@bufbuild/protobuf";
-import { Constraint } from "./buf/validate/expression_pb.js";
-import { FieldConstraints, field as bufField } from "./buf/validate/validate_pb.js";
+  FieldOptionsSchema,
+} from "@bufbuild/protobuf/wkt";
+import { ConstraintSchema } from "./buf/validate/expression_pb.js";
+import { FieldConstraintsSchema, field as bufField } from "./buf/validate/validate_pb.js";
 import { field as statelyField } from "./extensions_pb.js";
 import {
   BytesInterpretAs,
-  BytesOptions,
-  DoubleOptions,
+  BytesOptionsSchema,
+  DoubleOptionsSchema,
   FieldOptions_FromMetadata,
   FieldOptions_InitialValue,
-  Fixed32Options,
-  Fixed64Options,
-  FloatOptions,
-  Int32Options,
-  Int64Options,
+  Fixed32OptionsSchema,
+  Fixed64OptionsSchema,
+  FloatOptionsSchema,
+  Int32OptionsSchema,
+  Int64OptionsSchema,
   NumberInterpretAs,
-  SFixed32Options,
-  SFixed64Options,
-  SInt32Options,
-  SInt64Options,
+  SFixed32OptionsSchema,
+  SInt32OptionsSchema,
+  SInt64OptionsSchema,
   FieldOptions as StatelyFieldOptions,
+  FieldOptionsSchema as StatelyFieldOptionsSchema,
   StringInterpretAs,
-  StringOptions,
-  UInt32Options,
-  UInt64Options,
+  StringOptionsSchema,
+  UInt32OptionsSchema,
+  UInt64OptionsSchema,
 } from "./options_pb.js";
 import { Deferred, resolveDeferred } from "./type-util.js";
 import { SchemaType, isItemType, resolveType } from "./types.js";
@@ -178,7 +178,7 @@ export function field(fieldName: string, fieldConfig: Field): FieldDescriptorPro
       `Field number ${fieldConfig.fieldNum} for field ${fieldName} must be a positive nonzero integer`,
     );
   }
-  const field = new FieldDescriptorProto({
+  const field = create(FieldDescriptorProtoSchema, {
     name: fieldName,
     jsonName: fieldName,
     number: fieldConfig.fieldNum,
@@ -198,10 +198,9 @@ export function field(fieldName: string, fieldConfig: Field): FieldDescriptorPro
     // namespace but could be a problem later.
     // https://groups.google.com/g/protobuf/c/AM2tSnfwfqU/m/Fj234vSiDgAJ
     field.typeName = `.stately.generated.${typeInfo.underlyingType.name}`;
-    field.type =
-      typeInfo.underlyingType instanceof EnumDescriptorProto
-        ? FieldDescriptorProto_Type.ENUM
-        : FieldDescriptorProto_Type.MESSAGE;
+    field.type = isMessage(typeInfo.underlyingType, EnumDescriptorProtoSchema)
+      ? FieldDescriptorProto_Type.ENUM
+      : FieldDescriptorProto_Type.MESSAGE;
   }
 
   field.label = typeInfo.label;
@@ -224,7 +223,7 @@ export function field(fieldName: string, fieldConfig: Field): FieldDescriptorPro
   // TODO: further validate defaults (e.g. don't allow enum defaults, null only for message/array, etc)
 
   let ephemeral = false;
-  const statelyOptions = new StatelyFieldOptions();
+  const statelyOptions = create(StatelyFieldOptionsSchema);
   if ("fromMetadata" in fieldConfig && fieldConfig.fromMetadata) {
     statelyOptions.value = {
       case: "fromMetadata",
@@ -249,19 +248,19 @@ export function field(fieldName: string, fieldConfig: Field): FieldDescriptorPro
   }
 
   // set custom options
-  field.options = new FieldOptions();
+  field.options = create(FieldOptionsSchema);
   setExtension(field.options, statelyField, statelyOptions);
 
   // CEL-based validations
   const validations = [...(typeInfo.validations ?? []), fieldConfig.valid].filter(
     (v): v is string => v !== undefined,
   );
-  const fieldConstraints = new FieldConstraints();
+  const fieldConstraints = create(FieldConstraintsSchema);
   let hasFieldConstraints = false;
   if (validations.length > 0) {
     for (const valid of validations) {
       fieldConstraints.cel.push(
-        new Constraint({
+        create(ConstraintSchema, {
           id: fieldName,
           message: `Field ${fieldName} is invalid`,
           expression: valid,
@@ -288,7 +287,7 @@ export function field(fieldName: string, fieldConfig: Field): FieldDescriptorPro
 /** Extracts the specific type of a value type from a oneOf field */
 type OneOfValue<T extends { case: string }, K extends T["case"]> = T extends {
   case: K;
-  value: infer V extends Message<V>;
+  value: infer V;
 }
   ? V
   : never;
@@ -315,10 +314,10 @@ type NumberFieldOptionCases = NumberFieldOptionType["case"];
  */
 function convertNum<
   T extends NumberFieldOptionCases,
-  Value extends OneOfValue<NumberFieldOptionType, T> & Message<Value>,
+  Value extends OneOfValue<NumberFieldOptionType, T>,
 >(
   type: T,
-  constructor: new (data?: PartialMessage<Value>) => Value,
+  schema: GenDescMessage<Value>,
   interpretAs: InterpretAs,
 ): {
   case: T;
@@ -329,9 +328,9 @@ function convertNum<
   }
   return {
     case: type,
-    value: new constructor({
+    value: create(schema, {
       interpretAs: interpretAs ? fromNumberInterpretAs[interpretAs] : undefined,
-    } as PartialMessage<Value>),
+    } as Value),
   };
 }
 
@@ -349,36 +348,36 @@ function convertTypedOption(
   // TODO: Maybe we shouldn't support all the number types?
   switch (type) {
     case FieldDescriptorProto_Type.INT64:
-      return convertNum("int64", Int64Options, interpretAs);
+      return convertNum("int64", Int64OptionsSchema, interpretAs);
     case FieldDescriptorProto_Type.UINT64:
-      return convertNum("uint64", UInt64Options, interpretAs);
+      return convertNum("uint64", UInt64OptionsSchema, interpretAs);
     case FieldDescriptorProto_Type.INT32:
-      return convertNum("int32", Int32Options, interpretAs);
+      return convertNum("int32", Int32OptionsSchema, interpretAs);
     case FieldDescriptorProto_Type.UINT32:
-      return convertNum("uint32", UInt32Options, interpretAs);
+      return convertNum("uint32", UInt32OptionsSchema, interpretAs);
     case FieldDescriptorProto_Type.SINT32:
-      return convertNum("sint32", SInt32Options, interpretAs);
+      return convertNum("sint32", SInt32OptionsSchema, interpretAs);
     case FieldDescriptorProto_Type.SINT64:
-      return convertNum("sint64", SInt64Options, interpretAs);
+      return convertNum("sint64", SInt64OptionsSchema, interpretAs);
     case FieldDescriptorProto_Type.FIXED32:
-      return convertNum("fixed32", Fixed32Options, interpretAs);
+      return convertNum("fixed32", Fixed32OptionsSchema, interpretAs);
     case FieldDescriptorProto_Type.FIXED64:
-      return convertNum("fixed64", Fixed64Options, interpretAs);
+      return convertNum("fixed64", Fixed64OptionsSchema, interpretAs);
     case FieldDescriptorProto_Type.SFIXED32:
-      return convertNum("sfixed32", SFixed32Options, interpretAs);
+      return convertNum("sfixed32", SFixed32OptionsSchema, interpretAs);
     case FieldDescriptorProto_Type.SFIXED64:
-      return convertNum("fixed64", SFixed64Options, interpretAs);
+      return convertNum("fixed64", Fixed64OptionsSchema, interpretAs);
     case FieldDescriptorProto_Type.FLOAT:
-      return convertNum("float", FloatOptions, interpretAs);
+      return convertNum("float", FloatOptionsSchema, interpretAs);
     case FieldDescriptorProto_Type.DOUBLE:
-      return convertNum("double", DoubleOptions, interpretAs);
+      return convertNum("double", DoubleOptionsSchema, interpretAs);
     case FieldDescriptorProto_Type.BYTES: {
       if (interpretAs && !fromBytesInterpretAs[interpretAs]) {
         throw new Error(`Invalid interpretAs value for bytes type: ${interpretAs}`);
       }
       return {
         case: "bytes",
-        value: new BytesOptions({
+        value: create(BytesOptionsSchema, {
           interpretAs: interpretAs ? fromBytesInterpretAs[interpretAs] : undefined,
         }),
       };
@@ -389,7 +388,7 @@ function convertTypedOption(
       }
       return {
         case: "string",
-        value: new StringOptions({
+        value: create(StringOptionsSchema, {
           interpretAs: interpretAs ? fromStringInterpretAs[interpretAs] : undefined,
         }),
       };

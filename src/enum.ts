@@ -1,4 +1,9 @@
-import { EnumDescriptorProto, EnumValueDescriptorProto, PartialMessage } from "@bufbuild/protobuf";
+import { create } from "@bufbuild/protobuf";
+import {
+  EnumDescriptorProtoSchema,
+  EnumValueDescriptorProto,
+  EnumValueDescriptorProtoSchema,
+} from "@bufbuild/protobuf/wkt";
 import { getRegisteredType, registerType } from "./type-registry.js";
 import { SchemaType } from "./types.js";
 import { validateName } from "./validate.js";
@@ -75,7 +80,7 @@ export function enumType(
     return cached;
   }
 
-  const enumValues: PartialMessage<EnumValueDescriptorProto>[] = [];
+  const enumValues: EnumValueDescriptorProto[] = [];
 
   // eslint-disable-next-line prefer-const
   for (let [valueName, valueConfig] of Object.entries(values)) {
@@ -87,27 +92,31 @@ export function enumType(
         `Invalid name for enum value ${name}.${valueName}. Names must consist of letters, numbers, and underscore.`,
       );
     }
-    enumValues.push({
-      name: `${name}_${valueName}`,
-      number: valueConfig.value,
-      options: valueConfig.deprecated
-        ? {
-            deprecated: true,
-          }
-        : undefined,
-    });
+    enumValues.push(
+      create(EnumValueDescriptorProtoSchema, {
+        name: `${name}_${valueName}`,
+        number: valueConfig.value,
+        options: valueConfig.deprecated
+          ? {
+              deprecated: true,
+            }
+          : undefined,
+      }),
+    );
   }
 
   const hasZeroValue = enumValues.some((v) => v.number === 0);
 
   if (!hasZeroValue) {
-    enumValues.unshift({
-      name: `${name}_UNSPECIFIED`,
-      number: 0,
-    });
+    enumValues.unshift(
+      create(EnumValueDescriptorProtoSchema, {
+        name: `${name}_UNSPECIFIED`,
+        number: 0,
+      }),
+    );
   }
 
-  const enumDescriptor = new EnumDescriptorProto({
+  const enumDescriptor = create(EnumDescriptorProtoSchema, {
     name: name,
     value: enumValues,
     options: config.deprecated ? { deprecated: true } : undefined,

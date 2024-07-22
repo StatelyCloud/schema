@@ -1,4 +1,10 @@
-import { DescriptorProto, EnumDescriptorProto, FileDescriptorProto } from "@bufbuild/protobuf";
+import { create } from "@bufbuild/protobuf";
+import {
+  DescriptorProto,
+  EnumDescriptorProto,
+  FileDescriptorProto,
+  FileDescriptorProtoSchema,
+} from "@bufbuild/protobuf/wkt";
 import { Deferred, resolveDeferred } from "./type-util.js";
 import { SchemaType, resolveType } from "./types.js";
 
@@ -10,7 +16,7 @@ export function file(
   },
   fileName: string,
 ): FileDescriptorProto {
-  const fd = new FileDescriptorProto({
+  const fd = create(FileDescriptorProtoSchema, {
     name: `${fileName || "stately"}.proto`, // TODO: for now, we pretend everything was in a single "file"
     package: packageName, // TODO: for now, we pretend everything was in a single "package"
     // Add in any dependencies. Right now these can be hardcoded. We need our
