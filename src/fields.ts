@@ -45,8 +45,8 @@ export interface FieldFromMetadata {
    * - `createdAtTime` and `lastModifiedAtTime` must only be set on a field that
    *   has a timestamp type (`timestampSeconds`, `timestampMilliseconds`, or
    *   `timestampMicroseconds`).
-   * - `createdAtVersion`, `lastModifiedAtVersion`, and `updateCount` must only
-   *   be set on a field that has a `uint` type.
+   * - `createdAtVersion` and `lastModifiedAtVersion` must only be set on a
+   *   field that has a `uint` type.
    * - `primaryKeyPath` must only be set on a field that has a `keyPath` type.
    */
   fromMetadata?:
@@ -54,7 +54,6 @@ export interface FieldFromMetadata {
     | "lastModifiedAtTime"
     | "createdAtVersion"
     | "lastModifiedAtVersion"
-    | "updateCount"
     | "primaryKeyPath";
 }
 
@@ -137,7 +136,6 @@ const fromMetadataConvert: Record<
   lastModifiedAtTime: FieldOptions_FromMetadata.LAST_MODIFIED_AT_TIME,
   createdAtVersion: FieldOptions_FromMetadata.CREATED_AT_VERSION,
   lastModifiedAtVersion: FieldOptions_FromMetadata.LAST_MODIFIED_AT_VERSION,
-  updateCount: FieldOptions_FromMetadata.UPDATE_COUNT,
   primaryKeyPath: FieldOptions_FromMetadata.KEY_PATH,
 };
 

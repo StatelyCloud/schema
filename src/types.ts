@@ -213,9 +213,9 @@ export const currentTimestampMicroseconds = type("futureTimestampMicroseconds", 
 /* Durations */
 
 /** An duration in time with seconds resolution. The default is 0s. */
-export const durationSeconds = type("durationSeconds", uint, { interpretAs: "durationSeconds" });
+export const durationSeconds = type("durationSeconds", int, { interpretAs: "durationSeconds" });
 /** An duration in time with milliseconds resolution. The default is 0s. */
-export const durationMilliseconds = type("durationMilliseconds", uint, {
+export const durationMilliseconds = type("durationMilliseconds", int, {
   interpretAs: "durationMilliseconds",
 });
 

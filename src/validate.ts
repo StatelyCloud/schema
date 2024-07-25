@@ -8,5 +8,5 @@
  * @see https://protobuf.com/docs/language-spec#identifiers-and-keywords
  */
 export function validateName(name: string): boolean {
-  return /^[A-Za-z_]([A-Za-z0-9_])*$/.test(name);
+  return /^[A-Z_]\w*$/i.test(name);
 }

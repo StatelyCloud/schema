@@ -18,8 +18,9 @@ export declare type MessageOptions = Message<"stately.schemamodel.MessageOptions
    * key_paths is a list of key paths that this message will be stored at. The
    * first entry in this list is required, while subsequent entries represent
    * aliased alternative paths. For example, a user might be stored at both
-   * `/org-id/user-id` and `/user-id`. The first path is the primary path, and
-   * the subsequent paths are "aliases" that the item can be looked up at.
+   * `/org-id/user-id` and `/user-id`. The first path is the "primary" path that
+   * can be used as the item's canonical full ID, and the subsequent paths are
+   * "aliases" that can also be used to get/list/put/delete the item.
    *
    * @generated from field: repeated stately.schemamodel.MessageOptions.KeyPath key_paths = 1;
    */
@@ -328,6 +329,7 @@ export declare type FieldOptions = Message<"stately.schemamodel.FieldOptions"> &
          * after its default is populated. Not all values are valid for all types -
          * I guess we could have only the valid options defined in each type option
          * message, but that feels unnecessary.
+         * TODO: Maybe rename this "generate_id" to be more specific
          *
          * @generated from field: stately.schemamodel.FieldOptions.InitialValue initial_value = 24;
          */
@@ -405,13 +407,6 @@ export enum FieldOptions_FromMetadata {
    * @generated from enum value: FROM_METADATA_LAST_MODIFIED_AT_VERSION = 4;
    */
   LAST_MODIFIED_AT_VERSION = 4,
-
-  /**
-   * Populate this field with the number of times the item has been updated.
-   *
-   * @generated from enum value: FROM_METADATA_UPDATE_COUNT = 5;
-   */
-  UPDATE_COUNT = 5,
 
   /**
    * Populate this field with the full key path to the item.
