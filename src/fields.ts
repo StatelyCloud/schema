@@ -1,5 +1,5 @@
 import { create, isMessage, setExtension } from "@bufbuild/protobuf";
-import { GenDescMessage } from "@bufbuild/protobuf/codegenv1";
+import { GenMessage } from "@bufbuild/protobuf/codegenv1";
 import {
   EnumDescriptorProtoSchema,
   FieldDescriptorProto,
@@ -315,7 +315,7 @@ function convertNum<
   Value extends OneOfValue<NumberFieldOptionType, T>,
 >(
   type: T,
-  schema: GenDescMessage<Value>,
+  schema: GenMessage<Value>,
   interpretAs: InterpretAs,
 ): {
   case: T;
