@@ -407,13 +407,6 @@ export enum FieldOptions_FromMetadata {
    * @generated from enum value: FROM_METADATA_LAST_MODIFIED_AT_VERSION = 4;
    */
   LAST_MODIFIED_AT_VERSION = 4,
-
-  /**
-   * Populate this field with the full key path to the item.
-   *
-   * @generated from enum value: FROM_METADATA_KEY_PATH = 6;
-   */
-  KEY_PATH = 6,
 }
 
 /**

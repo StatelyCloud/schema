@@ -5,14 +5,14 @@ import {
   FileDescriptorProto,
   FileDescriptorProtoSchema,
 } from "@bufbuild/protobuf/wkt";
-import { Deferred, resolveDeferred } from "./type-util.js";
+import { Deferred, Plural, resolveDeferred, resolvePlural } from "./type-util.js";
 import { SchemaType, resolveType } from "./types.js";
 
 const packageName = "stately.generated";
 
 export function file(
   exportedValues: {
-    [name: string]: Deferred<SchemaType>;
+    [name: string]: Deferred<Plural<SchemaType>>;
   },
   fileName: string,
 ): FileDescriptorProto {
@@ -32,34 +32,36 @@ export function file(
   const seenTypes = new Map<string, EnumDescriptorProto | DescriptorProto>();
 
   for (const [_exportName, exportValue] of Object.entries(exportedValues)) {
-    const fieldConfig = resolveDeferred(exportValue);
-    const name = fieldConfig.name;
-    const fqName = `.${packageName}.${name}`;
-    if (!("parentType" in fieldConfig)) {
-      // console.warn(
-      //   `Expected ${name} to be either a FieldTypeConfig, or a function that returns FieldTypeConfig. Ignoring it.`,
-      // );
-      continue;
-    }
-
-    const { underlyingType } = resolveType(fieldConfig);
-    // Don't add the same type twice (e.g. if it's exported multiple times)
-    if (seenTypes.has(fqName)) {
-      if (seenTypes.get(fqName) !== underlyingType) {
-        throw new Error(`Found two types with the same name: ${fqName}`);
+    const fieldConfigs = resolvePlural(resolveDeferred(exportValue));
+    for (const fieldConfig of fieldConfigs) {
+      const name = fieldConfig.name;
+      const fqName = `.${packageName}.${name}`;
+      if (!("parentType" in fieldConfig)) {
+        // console.warn(
+        //   `Expected ${name} to be either a FieldTypeConfig, or a function that returns FieldTypeConfig. Ignoring it.`,
+        // );
+        continue;
       }
-      continue;
-    }
 
-    if (typeof underlyingType === "number") {
-      // ignore it
-      continue;
-    } else if ("value" in underlyingType) {
-      fd.enumType.push(underlyingType);
-    } else {
-      fd.messageType.push(underlyingType);
+      const { underlyingType } = resolveType(fieldConfig);
+      // Don't add the same type twice (e.g. if it's exported multiple times)
+      if (seenTypes.has(fqName)) {
+        if (seenTypes.get(fqName) !== underlyingType) {
+          throw new Error(`Found two types with the same name: ${fqName}`);
+        }
+        continue;
+      }
+
+      if (typeof underlyingType === "number") {
+        // ignore it
+        continue;
+      } else if ("value" in underlyingType) {
+        fd.enumType.push(underlyingType);
+      } else {
+        fd.messageType.push(underlyingType);
+      }
+      seenTypes.set(fqName, underlyingType);
     }
-    seenTypes.set(fqName, underlyingType);
   }
 
   // Check messages for references to unexported types

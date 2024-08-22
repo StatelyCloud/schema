@@ -26,7 +26,7 @@ export {
   int,
   keyPath,
   // mapOf,
-  pointerTo,
+  // pointerTo,
   string,
   timestampMicroseconds,
   timestampMilliseconds,

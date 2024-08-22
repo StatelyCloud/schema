@@ -5,7 +5,7 @@ import process from "node:process";
 import { tsImport } from "tsx/esm/api";
 import ts from "typescript";
 import { file } from "./file.js";
-import { SchemaType } from "./types.js";
+import { type SchemaType } from "./types.js";
 
 /**
  * The build function is used by the CLI to build a binary FileDescriptorSet
@@ -70,7 +70,7 @@ export async function build(inputPath: string, fileName: string) {
   // Import from the generated code.
   try {
     const exportedValues = (await tsImport(fullInputPath, import.meta.url)) as {
-      [name: string]: SchemaType | (() => SchemaType);
+      [name: string]: SchemaType | SchemaType[] | (() => SchemaType);
     };
     // Process into a FileDescriptorProto
     const fd = file(exportedValues, fileName);

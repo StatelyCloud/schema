@@ -167,7 +167,10 @@ export const double = type("double", FieldDescriptorProto_Type.DOUBLE);
 export const bytes = type("byte[]", FieldDescriptorProto_Type.BYTES);
 
 /** A 128-bit UUID. The default is null. */
-export const uuid = type("uuid", bytes, { interpretAs: "uuid" });
+export const uuid = type("uuid", bytes, {
+  interpretAs: "uuid",
+  valid: "size(this) == 0 || size(this) == 16",
+});
 
 /**
  * A URL. The url may be relative (a path, without a host) or absolute (starting
@@ -223,27 +226,27 @@ export const durationMilliseconds = type("durationMilliseconds", int, {
  * A pointer to another item type. This allows you to reference another item
  * elsewhere in the database by its key path.
  */
-export function pointerTo(dest: Deferred<SchemaType>): Deferred<SchemaType> {
-  return () => {
-    const descriptor = resolveDeferred(dest);
-    if (descriptor.array) {
-      throw new Error("Pointers cannot point to arrays.");
-    }
-    if (!isItemType(descriptor)) {
-      throw new Error("Pointers can only point to item types.");
-    }
+// export function pointerTo(dest: Deferred<SchemaType>): Deferred<SchemaType> {
+//   return () => {
+//     const descriptor = resolveDeferred(dest);
+//     if (descriptor.array) {
+//       throw new Error("Pointers cannot point to arrays.");
+//     }
+//     if (!isItemType(descriptor)) {
+//       throw new Error("Pointers can only point to item types.");
+//     }
 
-    // TODO: Pointers could actually be the minimal set of IDs required to
-    // *build* a key path for that item. In that case we'd really store a
-    // message with the type of the target item, and a special option that says
-    // "this is a pointer to that item".
-    // TODO: Right now these are indistinguishable from arbitrary key paths.
-    // We'd need a new option that explains what type this points to.
-    return type(`*${descriptor.name}`, string, {
-      interpretAs: "keyPath",
-    });
-  };
-}
+//     // TODO: Pointers could actually be the minimal set of IDs required to
+//     // *build* a key path for that item. In that case we'd really store a
+//     // message with the type of the target item, and a special option that says
+//     // "this is a pointer to that item".
+//     // TODO: Right now these are indistinguishable from arbitrary key paths.
+//     // We'd need a new option that explains what type this points to.
+//     return type(`*${descriptor.name}`, string, {
+//       interpretAs: "keyPath",
+//     });
+//   };
+// }
 
 /**
  * A helper to determine if a type is an item type.

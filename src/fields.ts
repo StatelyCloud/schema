@@ -39,22 +39,26 @@ export interface FieldFromMetadata {
   /**
    * Derive the field's value from StatelyDB metadata. These are special values
    * that StatelyDB keeps track of for each item, but you must map them to
-   * fields in the schema to use them. This implicitly makes the field read-only
-   * - any value set here will be ignored when the item is written.
+   * fields in the schema to use them. This implicitly makes the field
+   * read-only. Any value set for this field will be ignored when the item is
+   * written.
    *
    * - `createdAtTime` and `lastModifiedAtTime` must only be set on a field that
    *   has a timestamp type (`timestampSeconds`, `timestampMilliseconds`, or
-   *   `timestampMicroseconds`).
+   *   `timestampMicroseconds`). These represent the time the database first
+   *   created or last modified the item.
    * - `createdAtVersion` and `lastModifiedAtVersion` must only be set on a
-   *   field that has a `uint` type.
-   * - `primaryKeyPath` must only be set on a field that has a `keyPath` type.
+   *   field that has a `uint` type. These represent a monotonically increasing
+   *   version number within a Group that tracks modifications of items and can
+   *   be used to strictly order changes. Note that multiple items can have the
+   *   same createdAt/lastModifiedAtVersion if they were created/modified in the
+   *   same transaction, since they logically were modified at the same time.
    */
   fromMetadata?:
     | "createdAtTime"
     | "lastModifiedAtTime"
     | "createdAtVersion"
-    | "lastModifiedAtVersion"
-    | "primaryKeyPath";
+    | "lastModifiedAtVersion";
 }
 
 export interface FieldInitialValue {
@@ -136,7 +140,6 @@ const fromMetadataConvert: Record<
   lastModifiedAtTime: FieldOptions_FromMetadata.LAST_MODIFIED_AT_TIME,
   createdAtVersion: FieldOptions_FromMetadata.CREATED_AT_VERSION,
   lastModifiedAtVersion: FieldOptions_FromMetadata.LAST_MODIFIED_AT_VERSION,
-  primaryKeyPath: FieldOptions_FromMetadata.KEY_PATH,
 };
 
 const fromInitialValue: Record<
@@ -184,7 +187,7 @@ export function field(fieldName: string, fieldConfig: Field): FieldDescriptorPro
   const type = resolveDeferred(fieldConfig.type);
   if (isItemType(type)) {
     throw new Error(
-      `Item types should not be used as fields - consider using pointerTo(${fieldConfig.type.name}) instead`,
+      `Item types should not be used as fields - consider storing a keyPath of ${fieldConfig.type.name}) instead`,
     );
   }
   const typeInfo = resolveType(type);
