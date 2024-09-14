@@ -123,8 +123,13 @@ export function arrayOf(type: Deferred<SchemaType>): Deferred<SchemaType> {
       );
     }
 
+    // omit validation rules from the array type, since we want them to apply to
+    // each element, not the array itself.
+    // TODO: find a way to apply these validation rules to each element.
+    // https://app.clickup.com/t/8689jnfzt
+    const { valid, ...propagatedProperties } = resolvedType;
     return {
-      ...resolvedType,
+      ...propagatedProperties,
       name: `${resolvedType.name}[]`,
       array: true,
     };

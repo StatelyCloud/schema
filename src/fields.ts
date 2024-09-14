@@ -236,6 +236,7 @@ export function field(fieldName: string, fieldConfig: Field): FieldDescriptorPro
       case: "initialValue",
       value: fromInitialValue[fieldConfig.initialValue],
     };
+    ephemeral = true;
   } else if ("expression" in fieldConfig && fieldConfig.expression) {
     statelyOptions.value = {
       case: "celExpression",
@@ -270,12 +271,31 @@ export function field(fieldName: string, fieldConfig: Field): FieldDescriptorPro
       hasFieldConstraints = true;
     }
   }
-  // Use protovalidate's definition of required over whatever Protobuf thinks it means
-  if (!ephemeral && fieldConfig.required !== false) {
-    // If no default is set, this field is required!
+
+  if (field.type === FieldDescriptorProto_Type.BOOL && fieldConfig.required === true) {
+    throw new Error(
+      `Field ${fieldName} is a boolean field that's marked required - that would mean it could only have the value "true". This probably isn't what you want.`,
+    );
+  }
+
+  // Fields default to required. Unless the field has "required: false", we'll
+  // add a required validation. We use protovalidate's definition of required
+  // over whatever Protobuf thinks it means (i.e. proto3 optional) because it's
+  // easier to deal with as a validation error.
+  if (
+    // Ignore ephemeral/generated fields
+    !ephemeral &&
+    // Required defaults to true, so it's only not-required if explicitly set to false
+    fieldConfig.required !== false &&
+    // Booleans are exempt from the "default required" rule, since they can only
+    // be true or false, and false is their zero value, which means a required
+    // boolean could only be true.
+    field.type !== FieldDescriptorProto_Type.BOOL
+  ) {
     fieldConstraints.required = true;
     hasFieldConstraints = true;
   }
+
   if (hasFieldConstraints) {
     setExtension(field.options, bufField, fieldConstraints);
   }
