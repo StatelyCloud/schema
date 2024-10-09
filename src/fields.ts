@@ -264,7 +264,7 @@ export function field(fieldName: string, fieldConfig: Field): FieldDescriptorPro
       fieldConstraints.cel.push(
         create(ConstraintSchema, {
           id: fieldName,
-          message: `Field ${fieldName} is invalid`,
+          message: `value does not satisfy "${valid}"`,
           expression: valid,
         }),
       );
@@ -285,12 +285,12 @@ export function field(fieldName: string, fieldConfig: Field): FieldDescriptorPro
   if (
     // Ignore ephemeral/generated fields
     !ephemeral &&
-    // Required defaults to true, so it's only not-required if explicitly set to false
-    fieldConfig.required !== false &&
-    // Booleans are exempt from the "default required" rule, since they can only
-    // be true or false, and false is their zero value, which means a required
-    // boolean could only be true.
-    field.type !== FieldDescriptorProto_Type.BOOL
+    // Required defaults to true for non-bool fields, false for bool
+    (fieldConfig.required ??
+      // Booleans are exempt from the "default required" rule, since they can
+      // only be true or false, and false is their zero value, which means a
+      // required boolean could only be true.
+      field.type !== FieldDescriptorProto_Type.BOOL)
   ) {
     fieldConstraints.required = true;
     hasFieldConstraints = true;

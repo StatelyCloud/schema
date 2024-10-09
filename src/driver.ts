@@ -22,7 +22,7 @@ export async function build(inputPath: string, fileName: string) {
 
   process.stderr.write(`Building schema from ${fullInputPath}`);
 
-  // Use TypeScript to parse the input files
+  // Use TypeScript to parse the input files.
 
   const program = ts.createProgram([fullInputPath], {
     strict: true,
