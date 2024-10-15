@@ -70,17 +70,17 @@ export interface FieldInitialValue {
   initialValue?: "sequence" | "uuid" | "rand53";
 }
 
-export interface FieldFromExpression {
-  /**
-   * A CEL (Common Expression Language) expression that will be evaluated to
-   * produce this field's value. This makes the field a readonly "computed"
-   * field which is not stored in the database, but is calculated on the fly
-   * whenever the item is read. This can be especially useful when declaring
-   * indexes or key path templates.
-   * @see https://github.com/google/cel-spec
-   */
-  expression?: string;
-}
+// export interface FieldFromExpression {
+//   /**
+//    * A CEL (Common Expression Language) expression that will be evaluated to
+//    * produce this field's value. This makes the field a readonly "computed"
+//    * field which is not stored in the database, but is calculated on the fly
+//    * whenever the item is read. This can be especially useful when declaring
+//    * indexes or key path templates.
+//    * @see https://github.com/google/cel-spec
+//    */
+//   expression?: string;
+// }
 
 /**
  * A field in an item or object type. Each field has a specific type, and a
@@ -128,7 +128,7 @@ export type Field = {
   // TODO: SourceCodeInfo
 } & Pick<SchemaType, "valid"> & // Rather than force people to use a new type just to set one of these type options, we allow overriding them at the field level
   // Only one of these options can be set:
-  (FieldFromMetadata | FieldInitialValue | FieldFromExpression);
+  (FieldFromMetadata | FieldInitialValue) /* | FieldFromExpression */;
 
 /* Mappings between DSL string options and protobuf options */
 
@@ -237,13 +237,13 @@ export function field(fieldName: string, fieldConfig: Field): FieldDescriptorPro
       value: fromInitialValue[fieldConfig.initialValue],
     };
     ephemeral = true;
-  } else if ("expression" in fieldConfig && fieldConfig.expression) {
+  } /* else if ("expression" in fieldConfig && fieldConfig.expression) {
     statelyOptions.value = {
       case: "celExpression",
       value: fieldConfig.expression,
     };
     ephemeral = true;
-  }
+  } */
 
   if (field.type !== undefined) {
     statelyOptions.type = convertTypedOption(field.type, typeInfo.interpretAs);

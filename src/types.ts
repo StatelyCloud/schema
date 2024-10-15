@@ -166,8 +166,28 @@ export const string = type("string", FieldDescriptorProto_Type.STRING);
 export const int = type("int", FieldDescriptorProto_Type.SINT64);
 /** A 64-bit unsigned integer. The default is 0. */
 export const uint = type("uint", FieldDescriptorProto_Type.UINT64);
+/**
+ * A 32-bit signed integer. The default is 0. This may be preferable to an int
+ * when targeting JavaScript, since it can be represented as a number instead of
+ * a BigInt.
+ */
+export const int32 = type("int", FieldDescriptorProto_Type.SINT64);
+/**
+ * A 32-bit unsigned integer. The default is 0. This may be preferable to a uint
+ * when targeting JavaScript, since it can be represented as a number instead of
+ * a BigInt.
+ */
+export const uint32 = type("uint", FieldDescriptorProto_Type.UINT64);
 /** A 64-bit floating-point number. The default is 0.0. */
 export const double = type("double", FieldDescriptorProto_Type.DOUBLE);
+// export const jsint = type("jsint", FieldDescriptorProto_Type.SINT64, {
+//   // Ensure that the value is between Number.MAX_SAFE_INTEGER and Number.MIN_SAFE_INTEGER.
+//   valid: "this < 9007199254740991 && this > -9007199254740991",
+// });
+// export const jsuint = type("jsuint", FieldDescriptorProto_Type.UINT64, {
+//   // Ensure that the value is between Number.MAX_SAFE_INTEGER and Number.MIN_SAFE_INTEGER.
+//   valid: "this < 9007199254740991",
+// });
 /** A byte array. The default is an empty array. */
 export const bytes = type("byte[]", FieldDescriptorProto_Type.BYTES);
 

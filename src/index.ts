@@ -4,7 +4,7 @@
  * they need into their schema definitions.
  */
 export { enumType, type EnumConfig } from "./enum.js";
-export type { Field, FieldFromExpression, FieldFromMetadata, FieldInitialValue } from "./fields.js";
+export type { Field, FieldFromMetadata, FieldInitialValue } from "./fields.js";
 export {
   itemType,
   objectType,
