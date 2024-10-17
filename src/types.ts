@@ -171,13 +171,13 @@ export const uint = type("uint", FieldDescriptorProto_Type.UINT64);
  * when targeting JavaScript, since it can be represented as a number instead of
  * a BigInt.
  */
-export const int32 = type("int", FieldDescriptorProto_Type.SINT64);
+export const int32 = type("int32", FieldDescriptorProto_Type.SINT32);
 /**
  * A 32-bit unsigned integer. The default is 0. This may be preferable to a uint
  * when targeting JavaScript, since it can be represented as a number instead of
  * a BigInt.
  */
-export const uint32 = type("uint", FieldDescriptorProto_Type.UINT64);
+export const uint32 = type("uint32", FieldDescriptorProto_Type.UINT32);
 /** A 64-bit floating-point number. The default is 0.0. */
 export const double = type("double", FieldDescriptorProto_Type.DOUBLE);
 // export const jsint = type("jsint", FieldDescriptorProto_Type.SINT64, {
