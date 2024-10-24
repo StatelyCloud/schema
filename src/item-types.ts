@@ -80,7 +80,6 @@ export interface Fields {
 export interface ItemTypeConfig {
   /**
    * One or more key paths that determine where the item is stored in the database.
-   * The item type is derived from the first key path.
    */
   // TODO: In the future there may be more options than just the template - in
   // that case this can be Plural<string | KeyPathConfig>
@@ -91,13 +90,6 @@ export interface ItemTypeConfig {
    */
   // TODO: fieldNames must be camelCase and json-safe?
   fields: Fields;
-
-  /**
-   * Whether or not to automatically include metadata fields on this item type.
-   * If true, the metadata fields won't be automatically included, and you will
-   * have to map them in yourself using `fromMetadata` on each field.
-   */
-  // doNotIncludeMetadataFields?: boolean;
 
   /**
    * An optional TTL for the item, which will cause it to be automatically
