@@ -8,7 +8,9 @@ export type Deferred<T extends object> = T | (() => T);
  * Resolves a deferred type to its underlying type.
  */
 export function resolveDeferred<T extends object>(type: Deferred<T>): T {
-  return typeof type === "function" ? type() : type;
+  // The "type as T" is a bit of a lie if `type` is a function with multiple
+  // arguments, but it'll be caught elsewhere
+  return typeof type === "function" && type.length === 0 ? type() : (type as T);
 }
 
 /**

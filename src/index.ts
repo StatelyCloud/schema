@@ -15,6 +15,7 @@ export {
   type PropertyPath,
   type TTLConfig,
 } from "./item-types.js";
+export { migrate, type Migrator, type TypeMigrator } from "./migrate.js";
 export type { Deferred, Plural } from "./type-util.js";
 export {
   arrayOf,

@@ -6,6 +6,7 @@ import {
   FieldDescriptorProto_Label,
   FieldDescriptorProto_Type,
 } from "@bufbuild/protobuf/wkt";
+import { SchemaError } from "./errors.js";
 import { message } from "./extensions_pb.js";
 import { getRegisteredType, registerType } from "./type-registry.js";
 import { Deferred, resolveDeferred } from "./type-util.js";
@@ -118,7 +119,8 @@ export function arrayOf(type: Deferred<SchemaType>): Deferred<SchemaType> {
   return () => {
     const resolvedType = resolveDeferred(type);
     if (resolvedType.array) {
-      throw new Error(
+      throw new SchemaError(
+        "SchemaNestedArrays",
         `${resolvedType.name} is already an array, and nested arrays are not supported. Consider making a wrapper type with 'objectType'.`,
       );
     }
@@ -353,7 +355,7 @@ export function resolveType(type: SchemaType): {
   }
 
   if (!underlyingType) {
-    throw new Error(`No field type or type name found for ${type.name}`);
+    throw new SchemaError("SchemaUnknownType", `No field type or type name found for ${type.name}`);
   }
 
   return {

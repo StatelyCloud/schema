@@ -5,15 +5,14 @@ import {
   FileDescriptorProto,
   FileDescriptorProtoSchema,
 } from "@bufbuild/protobuf/wkt";
+import { SchemaError } from "./errors.js";
 import { Deferred, Plural, resolveDeferred, resolvePlural } from "./type-util.js";
 import { SchemaType, resolveType } from "./types.js";
 
 const packageName = "stately.generated";
 
 export function file(
-  exportedValues: {
-    [name: string]: Deferred<Plural<SchemaType>>;
-  },
+  schemaTypes: Deferred<Plural<SchemaType>>[],
   fileName: string,
 ): FileDescriptorProto {
   const fd = create(FileDescriptorProtoSchema, {
@@ -31,23 +30,32 @@ export function file(
 
   const seenTypes = new Map<string, EnumDescriptorProto | DescriptorProto>();
 
-  for (const [_exportName, exportValue] of Object.entries(exportedValues)) {
+  for (const exportValue of schemaTypes) {
     const fieldConfigs = resolvePlural(resolveDeferred(exportValue));
     for (const fieldConfig of fieldConfigs) {
-      const name = fieldConfig.name;
-      const fqName = `.${packageName}.${name}`;
-      if (!("parentType" in fieldConfig)) {
-        // console.warn(
-        //   `Expected ${name} to be either a FieldTypeConfig, or a function that returns FieldTypeConfig. Ignoring it.`,
-        // );
+      // First check to see if this is even a field config. TODO: We could
+      // switch this to a class, or add a symbol type to the objects, to make
+      // this more robust.
+      if (
+        typeof fieldConfig !== "object" ||
+        !("name" in fieldConfig) ||
+        !("parentType" in fieldConfig)
+      ) {
+        // Skip this, it allows exporting string/number constants and such
         continue;
       }
+
+      const name = fieldConfig.name;
+      const fqName = `.${packageName}.${name}`;
 
       const { underlyingType } = resolveType(fieldConfig);
       // Don't add the same type twice (e.g. if it's exported multiple times)
       if (seenTypes.has(fqName)) {
         if (seenTypes.get(fqName) !== underlyingType) {
-          throw new Error(`Found two types with the same name: ${fqName}`);
+          throw new SchemaError(
+            "SchemaDuplicateType",
+            `Found two types with the same name: ${fqName}`,
+          );
         }
         continue;
       }
@@ -71,7 +79,8 @@ export function file(
         // TODO: some sort of error accumulator
         // TODO: show the full typename in the error once the user has control over namespacing
         const shortName = field.typeName.split(".").at(-1)!;
-        throw new Error(
+        throw new SchemaError(
+          "SchemaUnexportedType",
           `Type ${shortName} was not exported. Please export it (e.g. 'export const ${shortName} = ...;').`,
         );
       }
