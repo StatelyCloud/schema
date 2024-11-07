@@ -129,13 +129,17 @@ export declare type MigrateAction = Message<"stately.schemamodel.MigrateAction">
       }
     | {
         /**
-         * There is no "AddType" - new types are added implicitly if they are new
-         * since the last version and are not mentioned in a rename.
-         *
          * @generated from field: stately.schemamodel.RemoveType remove_type = 7;
          */
         value: RemoveType;
         case: "removeType";
+      }
+    | {
+        /**
+         * @generated from field: stately.schemamodel.AddType add_type = 8;
+         */
+        value: AddType;
+        case: "addType";
       }
     | { case: undefined; value?: undefined };
 };
@@ -261,3 +265,24 @@ export declare type RemoveType = Message<"stately.schemamodel.RemoveType"> & {};
  * Use `create(RemoveTypeSchema)` to create a new message.
  */
 export declare const RemoveTypeSchema: GenMessage<RemoveType>;
+
+/**
+ * AddType adds an entirely new, full-specified item/object/enum type to the schema.
+ *
+ * @generated from message stately.schemamodel.AddType
+ */
+export declare type AddType = Message<"stately.schemamodel.AddType"> & {
+  /**
+   * name is the name of the object/item/enum to add. This should be used to look up the
+   * descriptor for that type in the new schema.
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+};
+
+/**
+ * Describes the message stately.schemamodel.AddType.
+ * Use `create(AddTypeSchema)` to create a new message.
+ */
+export declare const AddTypeSchema: GenMessage<AddType>;
