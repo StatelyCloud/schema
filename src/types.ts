@@ -46,11 +46,6 @@ export interface SchemaType {
   // default?: string | number | bigint | boolean | null;
 
   /**
-   * Documentation for this type, which will be used when generating code.
-   */
-  docs?: string;
-
-  /**
    * Whether this type as a whole is deprecated. This can affect generated code.
    */
   deprecated?: boolean;

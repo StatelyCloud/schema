@@ -106,11 +106,6 @@ export type Field = {
   fieldNum: number;
 
   /**
-   * Documentation for the field. This will be included in generated code.
-   */
-  docs?: string;
-
-  /**
    * Whether this field is deprecated. This will be marked in generated code.
    */
   deprecated?: boolean;

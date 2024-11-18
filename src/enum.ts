@@ -18,10 +18,6 @@ export interface EnumConfig {
    */
   // default?: string;
   /**
-   * Documentation for the enum. This will be included in generated code.
-   */
-  docs?: string;
-  /**
    * Whether this enum as a whole is deprecated. This will be marked in
    * generated code.
    */
@@ -31,12 +27,6 @@ export interface EnumConfig {
    * code.
    */
   deprecatedValues?: string[];
-}
-
-export interface EnumValueConfig {
-  value: number;
-  docs?: string;
-  deprecated?: boolean;
 }
 
 /**
@@ -65,7 +55,7 @@ export interface EnumValueConfig {
  */
 export function enumType(
   name: string,
-  values: { [name: string]: number | EnumValueConfig },
+  values: { [name: string]: number },
   config: EnumConfig = {},
 ) {
   if (!validateName(name)) {
@@ -83,10 +73,7 @@ export function enumType(
   const enumValues: EnumValueDescriptorProto[] = [];
 
   // eslint-disable-next-line prefer-const
-  for (let [valueName, valueConfig] of Object.entries(values)) {
-    if (typeof valueConfig === "number") {
-      valueConfig = { value: valueConfig };
-    }
+  for (let [valueName, valueNum] of Object.entries(values)) {
     if (!validateName(valueName)) {
       throw new Error(
         `Invalid name for enum value ${name}.${valueName}. Names must consist of letters, numbers, and underscore.`,
@@ -95,8 +82,8 @@ export function enumType(
     enumValues.push(
       create(EnumValueDescriptorProtoSchema, {
         name: `${name}_${valueName}`,
-        number: valueConfig.value,
-        options: valueConfig.deprecated
+        number: valueNum,
+        options: config.deprecatedValues?.includes(valueName)
           ? {
               deprecated: true,
             }
@@ -125,7 +112,6 @@ export function enumType(
   const schema: SchemaType = {
     name,
     parentType: enumDescriptor,
-    docs: config.docs,
     // default: enumDescriptor.value.find((v) => v.name === config.default)?.number,
     deprecated: config.deprecated,
   };

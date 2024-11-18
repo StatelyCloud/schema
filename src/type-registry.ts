@@ -1,5 +1,5 @@
 import { deepEqual } from "fast-equals";
-import { EnumConfig, EnumValueConfig } from "./enum.js";
+import { EnumConfig } from "./enum.js";
 import { Fields, ItemTypeConfig, ObjectTypeConfig } from "./item-types.js";
 import { SchemaType } from "./types.js";
 
@@ -15,7 +15,7 @@ type TypeConfig =
   | { type: "objectType"; config: ObjectTypeConfig }
   | {
       type: "enumType";
-      config: { values: { [name: string]: number | EnumValueConfig }; config: EnumConfig };
+      config: { values: { [name: string]: number }; config: EnumConfig };
     }
   | {
       type: "type";
@@ -103,15 +103,12 @@ function configsEqual(a: TypeConfig, b: TypeConfig) {
       if (b.type !== "enumType") {
         return false;
       }
-      return (
-        a.config.config.docs === b.config.config.docs && deepEqual(a.config.values, b.config.values)
-      );
+      return deepEqual(a.config.values, b.config.values);
     case "itemType":
       if (b.type !== "itemType") {
         return false;
       }
       return (
-        a.config.docs === b.config.docs &&
         deepEqual(a.config.keyPath, b.config.keyPath) &&
         fieldsEqual(a.config.fields, b.config.fields)
       );
@@ -119,13 +116,12 @@ function configsEqual(a: TypeConfig, b: TypeConfig) {
       if (b.type !== "objectType") {
         return false;
       }
-      return a.config.docs === b.config.docs && fieldsEqual(a.config.fields, b.config.fields);
+      return fieldsEqual(a.config.fields, b.config.fields);
     case "type":
       if (b.type !== "type") {
         return false;
       }
       return (
-        a.config.docs === b.config.docs &&
         a.config.parentType === b.config.parentType &&
         a.config.interpretAs === b.config.interpretAs &&
         a.config.valid === b.config.valid

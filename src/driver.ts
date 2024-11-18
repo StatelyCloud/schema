@@ -62,15 +62,13 @@ export async function build(inputPath: string, fileName: string): Promise<void> 
   const errors: StatelyErrorDetails[] = [];
 
   for (const diagnostic of allDiagnostics) {
-    let message = "";
+    let message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
     if (diagnostic.file) {
       const { line, character } = ts.getLineAndCharacterOfPosition(
         diagnostic.file,
         diagnostic.start!,
       );
       message = `${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`;
-    } else {
-      message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
     }
     errors.push(createError("InvalidTypeScript", message));
   }

@@ -122,7 +122,6 @@ export interface ItemTypeConfig {
    */
   deprecated?: boolean;
 
-  docs?: string;
   // TODO: message-level CEL validations?
 }
 
@@ -236,7 +235,7 @@ export function itemType(name: string, itemTypeConfig: ItemTypeConfig): SchemaTy
 
 export type ObjectTypeConfig = Pick<
   ItemTypeConfig,
-  "fields" | "reservedFieldNums" | "reservedNames" | "deprecated" | "docs"
+  "fields" | "reservedFieldNums" | "reservedNames" | "deprecated"
 >;
 
 /**
