@@ -1,4 +1,5 @@
 import { create } from "@bufbuild/protobuf";
+import { getPackageName } from "./driver.js";
 import {
   MigrateActionSchema,
   Migration,
@@ -19,7 +20,7 @@ class TypeMigrator {
    */
   constructor(name: string, migration: Migration) {
     // TODO: this hardcoded package name is gonna bite us someday
-    const typeName = `stately.generated.${name}`;
+    const typeName = `${getPackageName()}.${name}`;
     this.command = create(MigrationCommandSchema, {
       typeName,
     });
@@ -137,7 +138,7 @@ class Migrator {
   removeType(name: string) {
     this.migration.commands.push(
       create(MigrationCommandSchema, {
-        typeName: `stately.generated.${name}`,
+        typeName: `${getPackageName()}.${name}`,
         actions: [
           {
             action: {
@@ -158,13 +159,13 @@ class Migrator {
   renameType(oldName: string, newName: string) {
     this.migration.commands.push(
       create(MigrationCommandSchema, {
-        typeName: `stately.generated.${oldName}`,
+        typeName: `${getPackageName()}.${oldName}`,
         actions: [
           {
             action: {
               case: "renameType",
               value: {
-                newName: `stately.generated.${newName}`,
+                newName: `${getPackageName()}.${newName}`,
               },
             },
           },

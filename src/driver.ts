@@ -13,6 +13,9 @@ import { DSLResponse, DSLResponseSchema } from "./schemaservice/cli_pb.js";
 import { Deferred, Plural } from "./type-util.js";
 import { type SchemaType } from "./types.js";
 
+// getPackageName returns the package name to use for the schema.
+export const getPackageName = () => process.env.PACKAGE || "stately.generated";
+
 /**
  * The build function is used by the CLI to build a binary DSLResponse file from
  * input TypeScript files. The TypeScript files should include public exports of
@@ -28,6 +31,16 @@ import { type SchemaType } from "./types.js";
 export async function build(inputPath: string, fileName: string): Promise<void> {
   const fullInputPath = path.resolve(inputPath);
 
+  // We need to be able to generate unique package names for each schema file so that
+  // types do not collide in proto registries. (e.g. My app uses two different unrelated
+  // schemas, cpschema, and testschema). To do this we will add the file name to the package
+  // we generate. However, the program we create below to parse the input schema
+  // essentially runs a disconnected version of the DSL i.e. variables cannot be shared
+  // between the current runtime and the program we create below. Thus, when types are
+  // registered they will be registered with a default package name unless we have a way
+  // to communicate the package name to the program. Since we are still running in the same
+  // process, we can use an environment variable to do this.
+  process.env.PACKAGE = fileName ? `stately.generated.${fileName}` : "stately.generated";
   process.stderr.write(`Building schema from ${fullInputPath}`);
 
   // Use TypeScript to parse the input files.
@@ -108,7 +121,7 @@ export async function build(inputPath: string, fileName: string): Promise<void> 
   // Process into a FileDescriptorProto
   let fd: FileDescriptorProto;
   try {
-    fd = file(schemaTypes, fileName);
+    fd = file(schemaTypes, fileName, getPackageName());
   } catch (e) {
     if (e instanceof SchemaError) {
       const output = create(DSLResponseSchema, {

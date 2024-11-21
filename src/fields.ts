@@ -9,6 +9,7 @@ import {
 } from "@bufbuild/protobuf/wkt";
 import { ConstraintSchema } from "./buf/validate/expression_pb.js";
 import { FieldConstraintsSchema, field as bufField } from "./buf/validate/validate_pb.js";
+import { getPackageName } from "./driver.js";
 import { field as statelyField } from "./extensions_pb.js";
 import {
   BytesInterpretAs,
@@ -193,7 +194,7 @@ export function field(fieldName: string, fieldConfig: Field): FieldDescriptorPro
     // type that refers to them. That's OK for now since we only have one
     // namespace but could be a problem later.
     // https://groups.google.com/g/protobuf/c/AM2tSnfwfqU/m/Fj234vSiDgAJ
-    field.typeName = `.stately.generated.${typeInfo.underlyingType.name}`;
+    field.typeName = `.${getPackageName()}.${typeInfo.underlyingType.name}`;
     field.type = isMessage(typeInfo.underlyingType, EnumDescriptorProtoSchema)
       ? FieldDescriptorProto_Type.ENUM
       : FieldDescriptorProto_Type.MESSAGE;

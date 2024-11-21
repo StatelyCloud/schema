@@ -9,11 +9,10 @@ import { SchemaError } from "./errors.js";
 import { Deferred, Plural, resolveDeferred, resolvePlural } from "./type-util.js";
 import { SchemaType, resolveType } from "./types.js";
 
-const packageName = "stately.generated";
-
 export function file(
   schemaTypes: Deferred<Plural<SchemaType>>[],
   fileName: string,
+  packageName: string,
 ): FileDescriptorProto {
   const fd = create(FileDescriptorProtoSchema, {
     name: `${fileName || "stately"}.proto`, // TODO: for now, we pretend everything was in a single "file"
