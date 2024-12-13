@@ -111,10 +111,15 @@ export async function build(inputPath: string, fileName: string): Promise<void> 
 
   // The export names don't matter, only the exported values
   for (const value of Object.values(exportedValues)) {
-    if (value instanceof DeferredMigration) {
-      deferredMigrations.push(value);
+    // We cannot compare types of values with "instanceof" because the
+    // DeferredMigration type used in the customer's schema file is 
+    // a different copy of the class from the one we've imported here.
+    // One is imported directly and the other is interpreted through 
+    // "tsImport". So instead we use the constructor name to compare types.
+    if (value.constructor.name === "DeferredMigration") {
+      deferredMigrations.push(value as DeferredMigration);
     } else {
-      schemaTypes.push(value);
+      schemaTypes.push(value as Deferred<Plural<SchemaType>>);
     }
   }
 
