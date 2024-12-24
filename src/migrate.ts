@@ -19,7 +19,6 @@ class TypeMigrator {
    * @private
    */
   constructor(name: string, migration: Migration) {
-    // TODO: this hardcoded package name is gonna bite us someday
     const typeName = `${getPackageName()}.${name}`;
     this.command = create(MigrationCommandSchema, {
       typeName,
@@ -143,6 +142,26 @@ class Migrator {
           {
             action: {
               case: "removeType",
+              value: {},
+            },
+          },
+        ],
+      }),
+    );
+  }
+
+  /**
+   * Mark an entire type (item, object, or enum type) as having been added since
+   * the "from" version.
+   */
+  addType(name: string) {
+    this.migration.commands.push(
+      create(MigrationCommandSchema, {
+        typeName: `${getPackageName()}.${name}`,
+        actions: [
+          {
+            action: {
+              case: "addType",
               value: {},
             },
           },

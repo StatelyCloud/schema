@@ -255,6 +255,7 @@ export declare const RenameTypeSchema: GenMessage<RenameType>;
  * RemoveType removes an item, object, or enum type.
  *
  * The name of the type is in the type_name field of the parent MigrationCommand.
+ * TODO: this is where we'd configure what to do with existing items of this type.
  *
  * @generated from message stately.schemamodel.RemoveType
  */
@@ -269,17 +270,11 @@ export declare const RemoveTypeSchema: GenMessage<RemoveType>;
 /**
  * AddType adds an entirely new, full-specified item/object/enum type to the schema.
  *
+ * The name of the type is in the type_name field of the parent MigrationCommand.
+ *
  * @generated from message stately.schemamodel.AddType
  */
-export declare type AddType = Message<"stately.schemamodel.AddType"> & {
-  /**
-   * name is the name of the object/item/enum to add. This should be used to look up the
-   * descriptor for that type in the new schema.
-   *
-   * @generated from field: string name = 1;
-   */
-  name: string;
-};
+export declare type AddType = Message<"stately.schemamodel.AddType"> & {};
 
 /**
  * Describes the message stately.schemamodel.AddType.
