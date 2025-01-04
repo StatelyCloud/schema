@@ -79,9 +79,14 @@ export function enumType(
         `Invalid name for enum value ${name}.${valueName}. Names must consist of letters, numbers, and underscore.`,
       );
     }
+    // Note that enum values are a sibling to the enum parent in the proto
+    // namespace - they must be globally unique. We follow the
+    // https://buf.build/docs/lint/rules/#enum_value_prefix rule and prefix all
+    // enum values with the enum name. This produces some awkward names in
+    // generated code, which we should fix in our own codegen.
     enumValues.push(
       create(EnumValueDescriptorProtoSchema, {
-        name: `${name}_${valueName}`,
+        name: enumValueName(name, valueName),
         number: valueNum,
         options: config.deprecatedValues?.includes(valueName)
           ? {
@@ -97,7 +102,7 @@ export function enumType(
   if (!hasZeroValue) {
     enumValues.unshift(
       create(EnumValueDescriptorProtoSchema, {
-        name: `${name}_UNSPECIFIED`,
+        name: enumValueName(name, "UNSPECIFIED"),
         number: 0,
       }),
     );
@@ -117,6 +122,10 @@ export function enumType(
   };
 
   return registerType("enumType", schema, fullEnumConfig);
+}
+
+export function enumValueName(enumName: string, valueName: string) {
+  return `${enumName}_${valueName}`;
 }
 
 // TODO: Implement flagsType, which is like an enum but the values are flags in a bitfield

@@ -5,6 +5,7 @@ import process from "node:process";
 import { tsImport } from "tsx/esm/api";
 import ts from "typescript";
 import packageJson from "../package.json" with { type: "json" };
+import { buildSourceCodeInfo, extractCommentBindings } from "./comments.js";
 import { SchemaError } from "./errors.js";
 import { StatelyErrorDetails, StatelyErrorDetailsSchema } from "./errors/error_details_pb.js";
 import { file } from "./file.js";
@@ -41,11 +42,10 @@ export async function build(inputPath: string, fileName: string): Promise<void> 
   // to communicate the package name to the program. Since we are still running in the same
   // process, we can use an environment variable to do this.
   process.env.PACKAGE = fileName ? `stately.generated.${fileName}` : "stately.generated";
-  process.stderr.write(`Building schema from ${fullInputPath}`);
+  process.stderr.write(`Building schema from ${inputPath}\n`);
 
   // Use TypeScript to parse the input files.
-
-  const program = ts.createProgram([fullInputPath], {
+  const tsOpts: ts.CompilerOptions = {
     strict: true,
     esModuleInterop: true,
     module: ts.ModuleKind.ESNext,
@@ -59,7 +59,8 @@ export async function build(inputPath: string, fileName: string): Promise<void> 
     baseUrl: ".",
     allowJs: true,
     useUnknownInCatchVariables: true,
-  });
+  };
+  const program = ts.createProgram([fullInputPath], tsOpts);
 
   // Validate and type check the program
   const allDiagnostics = ts.getPreEmitDiagnostics(program);
@@ -136,6 +137,20 @@ export async function build(inputPath: string, fileName: string): Promise<void> 
     } else {
       await respondWithError(e, "SchemaCode", "An error occurred while running your schema code.");
     }
+    return;
+  }
+
+  // Add comment information to the FileDescriptorProto, statically extracted
+  // from the TypeScript AST.
+  try {
+    const commentBindings = extractCommentBindings(program);
+    fd.sourceCodeInfo = buildSourceCodeInfo(fd, commentBindings);
+  } catch (e) {
+    await respondWithError(
+      e,
+      "SchemaComment",
+      "An error occurred while extracting comments from your schema code.",
+    );
     return;
   }
 
