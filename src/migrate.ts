@@ -9,8 +9,7 @@ import {
 } from "./migration_pb.js";
 
 /**
- * A type migrator is used to declare changes within a type (item, object, or
- * enum).
+ * A type migrator is used to declare changes within a type (item or object)
  */
 class TypeMigrator {
   private command: MigrationCommand;
@@ -101,6 +100,91 @@ class TypeMigrator {
 }
 
 /**
+ * An enum type migrator is used to declare changes within an enum.
+ */
+class EnumTypeMigrator {
+  private command: MigrationCommand;
+
+  /**
+   * @private
+   */
+  // eslint-disable-next-line sonarjs/no-identical-functions
+  constructor(name: string, migration: Migration) {
+    const typeName = `${getPackageName()}.${name}`;
+    this.command = create(MigrationCommandSchema, {
+      typeName,
+    });
+    migration.commands.push(this.command);
+  }
+
+  /**
+   * Mark an enum value in the type as having been renamed since the "from" version.
+   * This helps distinguish between a value being removed and a new value being
+   * added, and the *same* value just getting a new name.
+   * This can only be used with enum types.
+   * @example
+   * m.changeEnum("UserState", (i) => {
+   *   i.renameValue("New", "Created")
+   * });
+   */
+  renameValue(oldName: string, newName: string) {
+    this.command.actions.push(
+      create(MigrateActionSchema, {
+        action: {
+          case: "renameEnumValue",
+          value: {
+            oldValueName: oldName,
+            newValueName: newName,
+          },
+        },
+      }),
+    );
+  }
+
+  /**
+   * Mark a value in the enum as added since the "from" version. Only the name
+   * needs to be provided - the rest of the info is derived from the new schema.
+   * @param name The name of the field to add.
+   * @example
+   * m.changeEnum("UserState", (i) => {
+   *  i.addValue("Banned");
+   * });
+   */
+  addValue(name: string) {
+    this.command.actions.push(
+      create(MigrateActionSchema, {
+        action: {
+          case: "addEnumValue",
+          value: {
+            newValueName: name,
+          },
+        },
+      }),
+    );
+  }
+
+  /**
+   * Mark a value in the enum as removed since the "from" version.
+   * @example
+   * m.changeEnum("UserState", (i) => {
+   *  i.removeValue("Tombstoned");
+   * });
+   */
+  removeValue(name: string) {
+    this.command.actions.push(
+      create(MigrateActionSchema, {
+        action: {
+          case: "removeEnumValue",
+          value: {
+            valueName: name,
+          },
+        },
+      }),
+    );
+  }
+}
+
+/**
  * A helper for declaring changes to a schema since the last version.
  */
 class Migrator {
@@ -114,12 +198,10 @@ class Migrator {
   }
 
   /**
-   * Declare a series of changes to a type (item, object, or enum type) that
-   * have been made since the "from" version. If a type has been renamed, make
-   * sure to call `renameType` first, and then call `changeType` with the new
-   * name.
-   * @param typeName The name of the type (itemType, objectType, enumType) to
-   * change.
+   * Declare a series of changes to a type (item or object) that have been made
+   * since the "from" version. If a type has been renamed, make sure to call
+   * `renameType` first, and then call `changeType` with the new name.
+   * @param typeName The name of the type (itemType or objectType) to change.
    * @param changeFn A function that takes a TypeMigrator to declare changes.
    * @example
    * m.changeType("Role", (i) => {
@@ -128,6 +210,21 @@ class Migrator {
    */
   changeType(typeName: string, changeFn: (t: TypeMigrator) => void) {
     changeFn(new TypeMigrator(typeName, this.migration));
+  }
+
+  /**
+   * Declare a series of changes to an enum that have been made since the
+   * "from" version. If an enum has been renamed, make sure to call `renameType`
+   * first, and then call `changeEnum` with the new name.
+   * @param enumName The name of the enum to change.
+   * @param changeFn A function that takes a EnumTypeMigrator to declare changes.
+   * @example
+   * m.changeEnum("UserState", (i) => {
+   *  i.addValue("Banned");
+   * });
+   */
+  changeEnum(enumName: string, changeFn: (t: EnumTypeMigrator) => void) {
+    changeFn(new EnumTypeMigrator(enumName, this.migration));
   }
 
   /**

@@ -1,6 +1,6 @@
 {
   "name": "@stately-cloud/schema",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "author": "Stately Cloud <support@stately.cloud> (https://stately.cloud/)",
   "description": "Schema language for StatelyDB",
   "types": "dist/index.d.ts",

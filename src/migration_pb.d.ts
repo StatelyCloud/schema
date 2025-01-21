@@ -141,6 +141,29 @@ export declare type MigrateAction = Message<"stately.schemamodel.MigrateAction">
         value: AddType;
         case: "addType";
       }
+    | {
+        /**
+         * Enums
+         *
+         * @generated from field: stately.schemamodel.RenameEnumValue rename_enum_value = 9;
+         */
+        value: RenameEnumValue;
+        case: "renameEnumValue";
+      }
+    | {
+        /**
+         * @generated from field: stately.schemamodel.AddEnumValue add_enum_value = 10;
+         */
+        value: AddEnumValue;
+        case: "addEnumValue";
+      }
+    | {
+        /**
+         * @generated from field: stately.schemamodel.RemoveEnumValue remove_enum_value = 11;
+         */
+        value: RemoveEnumValue;
+        case: "removeEnumValue";
+      }
     | { case: undefined; value?: undefined };
 };
 
@@ -281,3 +304,80 @@ export declare type AddType = Message<"stately.schemamodel.AddType"> & {};
  * Use `create(AddTypeSchema)` to create a new message.
  */
 export declare const AddTypeSchema: GenMessage<AddType>;
+
+/**
+ * RenameEnumValue renames the enum value from the existing old_value_name to a new_value_name.
+ *
+ * The enum type name to modify is in the type_name field of the parent MigrationCommand
+ *
+ * @generated from message stately.schemamodel.RenameEnumValue
+ */
+export declare type RenameEnumValue = Message<"stately.schemamodel.RenameEnumValue"> & {
+  /**
+   * old_value_name is the name of the existing enum value to rename. This can be used to look up the
+   * field in the old (from_schema_version) schema.
+   *
+   * @generated from field: string old_value_name = 1;
+   */
+  oldValueName: string;
+
+  /**
+   * new_value_name is the new name of the enum value. This can be used to look up the
+   * field in the new (proposed) schema.
+   *
+   * @generated from field: string new_value_name = 2;
+   */
+  newValueName: string;
+};
+
+/**
+ * Describes the message stately.schemamodel.RenameEnumValue.
+ * Use `create(RenameEnumValueSchema)` to create a new message.
+ */
+export declare const RenameEnumValueSchema: GenMessage<RenameEnumValue>;
+
+/**
+ * AddEnumValue adds a new enum value to an existing enum type.
+ *
+ * The enum type name to modify is in the type_name field of the parent MigrationCommand
+ *
+ * @generated from message stately.schemamodel.AddEnumValue
+ */
+export declare type AddEnumValue = Message<"stately.schemamodel.AddEnumValue"> & {
+  /**
+   * new_value_name is the name of the enum value to add. This can be used to look up the
+   * field in the new (proposed) schema.
+   *
+   * @generated from field: string new_value_name = 1;
+   */
+  newValueName: string;
+};
+
+/**
+ * Describes the message stately.schemamodel.AddEnumValue.
+ * Use `create(AddEnumValueSchema)` to create a new message.
+ */
+export declare const AddEnumValueSchema: GenMessage<AddEnumValue>;
+
+/**
+ * RemoveEnumValue removes an existing enum value from an existing enum type.
+ *
+ * The enum type name to modify is in the type_name field of the parent MigrationCommand
+ *
+ * @generated from message stately.schemamodel.RemoveEnumValue
+ */
+export declare type RemoveEnumValue = Message<"stately.schemamodel.RemoveEnumValue"> & {
+  /**
+   * value_name is the name of the enum value to remove. This can be used to look up the
+   * field in the old (from_schema_version) schema.
+   *
+   * @generated from field: string value_name = 1;
+   */
+  valueName: string;
+};
+
+/**
+ * Describes the message stately.schemamodel.RemoveEnumValue.
+ * Use `create(RemoveEnumValueSchema)` to create a new message.
+ */
+export declare const RemoveEnumValueSchema: GenMessage<RemoveEnumValue>;
