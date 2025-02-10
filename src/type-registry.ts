@@ -131,7 +131,7 @@ function configsEqual(a: TypeConfig, b: TypeConfig) {
 
 /**
  * A sort of lightweight comparison of fields - they're the same if there are
- * exactly the same names and field numbers. We can't compare the types directly
+ * exactly the same names. We can't compare the types directly
  * because they may be functions.
  */
 function fieldsEqual(a: Fields, b: Fields) {
@@ -139,7 +139,7 @@ function fieldsEqual(a: Fields, b: Fields) {
     return false;
   }
   for (const key in a) {
-    if (!b[key] || a[key].fieldNum !== b[key].fieldNum) {
+    if (!b[key]) {
       return false;
     }
   }

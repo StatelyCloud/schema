@@ -100,13 +100,6 @@ export type Field = {
   type: Deferred<SchemaType>;
 
   /**
-   * A number to uniquely identify this field in its enclosing object. This is
-   * used to compactly encode the field without having to write out its name,
-   * which as a side effect makes name changes backwards compatible.
-   */
-  fieldNum: number;
-
-  /**
    * Whether this field is deprecated. This will be marked in generated code.
    */
   deprecated?: boolean;
@@ -170,20 +163,14 @@ const fromStringInterpretAs: Partial<Record<InterpretAsValues, StringInterpretAs
  * @private It is used internally by itemType/objectType to build the fields of a message.
  */
 export function field(fieldName: string, fieldConfig: Field): FieldDescriptorProto {
-  if (fieldConfig.fieldNum <= 0 || fieldConfig.fieldNum !== Math.floor(fieldConfig.fieldNum)) {
-    throw new Error(
-      `Field number ${fieldConfig.fieldNum} for field ${fieldName} must be a positive nonzero integer`,
-    );
-  }
   const field = create(FieldDescriptorProtoSchema, {
     name: fieldName,
     jsonName: fieldName,
-    number: fieldConfig.fieldNum,
   });
   const type = resolveDeferred(fieldConfig.type);
   if (isItemType(type)) {
     throw new Error(
-      `Item types should not be used as fields - consider storing a keyPath of ${fieldConfig.type.name}) instead`,
+      `Item types should not be used as fields - consider storing just the key path string pointing to ${type.name} instead, or declare it using objectType instead of itemType.`,
     );
   }
   const typeInfo = resolveType(type);

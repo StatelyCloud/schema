@@ -1,10 +1,10 @@
 import { create, toBinary } from "@bufbuild/protobuf";
 import { FileDescriptorProto } from "@bufbuild/protobuf/wkt";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { tsImport } from "tsx/esm/api";
 import ts from "typescript";
-import packageJson from "../package.json" with { type: "json" };
 import { buildSourceCodeInfo, extractCommentBindings } from "./comments.js";
 import { SchemaError } from "./errors.js";
 import { StatelyErrorDetails, StatelyErrorDetailsSchema } from "./errors/error_details_pb.js";
@@ -29,7 +29,11 @@ export const getPackageName = () => process.env.PACKAGE || "stately.generated";
  * @example
  * await build("input.ts");
  */
-export async function build(inputPath: string, fileName: string): Promise<void> {
+export async function build(
+  inputPath: string,
+  fileName: string,
+  migrationsFromSchemaVersion?: bigint,
+): Promise<void> {
   const fullInputPath = path.resolve(inputPath);
 
   // We need to be able to generate unique package names for each schema file so that
@@ -154,15 +158,18 @@ export async function build(inputPath: string, fileName: string): Promise<void> 
     return;
   }
 
-  // Collect and expand all the migrations from the latest version. In the
-  // future I suppose we can pass a specific from-version argument.
-  const latestMigrations = getLatestMigrations(deferredMigrations);
-  const migrations = latestMigrations.map((migration) => migration.build());
+  // Collect and expand all the migrations from selected schema version.
+  // If an old version of the CLI has not passed migrationsFromSchemaVersion then just
+  // return the migrations with the highest version number.
+  const migrationsFromTargetVersions =
+    migrationsFromSchemaVersion !== undefined
+      ? deferredMigrations.filter((m) => m.fromSchemaVersion === migrationsFromSchemaVersion)
+      : getLatestMigrations(deferredMigrations);
+  const migrations = migrationsFromTargetVersions.map((migration) => migration.build());
 
   const output = create(DSLResponseSchema, {
     fileDescriptor: fd,
     migrations: migrations,
-    dslVersion: packageJson.version,
   });
   respond(output);
 }
@@ -193,6 +200,10 @@ async function respondWithError(e: unknown, statelyCode: string, message: string
 }
 
 async function respond(output: DSLResponse) {
+  // Get the version of the DSL from the package.json
+  const packageJson = JSON.parse(
+    (await readFile(new URL("../package.json", import.meta.url))).toString("utf8"),
+  ) as { version: string };
   output.dslVersion = packageJson.version;
   // Export the DSLResponse to the output path
   const outputBytes = toBinary(DSLResponseSchema, output);

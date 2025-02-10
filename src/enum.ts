@@ -11,13 +11,6 @@ import { validateName } from "./validate.js";
 /** Options for defining an enum. Used in {@link enumType}. */
 export interface EnumConfig {
   /**
-   * The default value of the enum. This must be one of the values. If a default
-   * is specified then the enum starts at 0 (which is the default if the field
-   * is not set). If no default is set, the enum values start at 1, and 0 is
-   * reserved for a special "unspecified" value.
-   */
-  // default?: string;
-  /**
    * Whether this enum as a whole is deprecated. This will be marked in
    * generated code.
    */
@@ -38,17 +31,17 @@ export interface EnumConfig {
  * @returns A new enum type that can be used when defining fields.
  * @example
  * export const Rank = enumType("Rank", {
- *   Beginner: 1,
- *   Intermediate: 2,
- *   Expert: 3,
- * }, {
- *   default: "Beginner",
+ *   Beginner: 0, // This is the default value, but also the zero value
+ *   Intermediate: 1,
+ *   Expert: 2,
  * });
  * export const Player = itemType("Player", {
  *   fields: {
  *     rank: {
  *       type: Rank,
- *       fieldNum: 1,
+ *       // If the field was required (the default) you couldn't use the
+ *       // zero (Beginner) value
+ *       required: false,
  *     },
  *   },
  * });
@@ -117,7 +110,6 @@ export function enumType(
   const schema: SchemaType = {
     name,
     parentType: enumDescriptor,
-    // default: enumDescriptor.value.find((v) => v.name === config.default)?.number,
     deprecated: config.deprecated,
   };
 

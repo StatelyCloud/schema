@@ -182,10 +182,6 @@ export declare type AddField = Message<"stately.schemamodel.AddField"> & {
   /**
    * name is the name of the field to add. This should be used to look up the
    * descriptor for that field in the new schema.
-   * TODO: This could also be a field number, if the DSL code wants to
-   * cross-reference with the actual final FileDescriptorProto. That said, it
-   * may be easier to just send up field names and let the server do the
-   * validation.
    *
    * TODO: The other option is to include the full FieldDescriptorProto here:
    * field is the full spec for the field to add, including any Stately

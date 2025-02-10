@@ -13,7 +13,6 @@ import { SchemaType } from "./types.js";
 
 import {
   DescriptorProto,
-  DescriptorProto_ReservedRangeSchema,
   DescriptorProtoSchema,
   FieldDescriptorProto,
   MessageOptionsSchema,
@@ -57,7 +56,6 @@ export type PropertyPath = string;
  * const sharedFields: Fields = {
  *   name: {
  *     type: string,
- *     fieldNum: 1,
  *   }
  * };
  *
@@ -67,8 +65,6 @@ export type PropertyPath = string;
  *     ...sharedFields,
  *     description: {
  *       type: string,
- *       // You still need to make sure field numbers don't collide.
- *       fieldNum: 2,
  *     },
  *   },
  * });
@@ -104,11 +100,6 @@ export interface ItemTypeConfig {
   // TODO: In the future this could be a union with other index types
   indexes?: GroupLocalIndexConfig[];
 
-  /**
-   * Field numbers that are no longer used but used to be. When removing a
-   * field, the field number should be added to this list to prevent re-use.
-   */
-  reservedFieldNums?: number[];
   /**
    * Field names that are no longer used but used to be. When removing or
    * renaming a field, the old field name should be added to this list to
@@ -225,7 +216,7 @@ export function itemType(name: string, itemTypeConfig: ItemTypeConfig): SchemaTy
   // fields
   message.field = populateFields(name, itemTypeConfig.fields);
 
-  // Reserved field numbers / names
+  // Reserved field names
   populateReserved(message, itemTypeConfig);
 
   // addSyntheticOneofs(message);
@@ -233,10 +224,7 @@ export function itemType(name: string, itemTypeConfig: ItemTypeConfig): SchemaTy
   return schemaType;
 }
 
-export type ObjectTypeConfig = Pick<
-  ItemTypeConfig,
-  "fields" | "reservedFieldNums" | "reservedNames" | "deprecated"
->;
+export type ObjectTypeConfig = Pick<ItemTypeConfig, "fields" | "reservedNames" | "deprecated">;
 
 /**
  * An object type is very much like an item type, but it can only be used as a
@@ -259,7 +247,7 @@ export function objectType(name: string, itemTypeConfig: ObjectTypeConfig): Sche
   // fields
   message.field = populateFields(name, itemTypeConfig.fields);
 
-  // Reserved field numbers / names
+  // Reserved field names
   populateReserved(message, itemTypeConfig);
 
   // addSyntheticOneofs(message);
@@ -272,8 +260,6 @@ export function objectType(name: string, itemTypeConfig: ObjectTypeConfig): Sche
  * object type.
  */
 function populateFields(typeName: string, fieldConfigs: ItemTypeConfig["fields"]) {
-  const usedNums = new Set<number>();
-
   const fields: FieldDescriptorProto[] = [];
   for (const [fieldName, fieldConfig] of Object.entries(fieldConfigs)) {
     // TODO: validate field names further? e.g. force them to be camelCase?
@@ -282,15 +268,6 @@ function populateFields(typeName: string, fieldConfigs: ItemTypeConfig["fields"]
     }
     try {
       const fieldProto = field(fieldName, resolveDeferred(fieldConfig));
-      if (fieldProto.number === undefined) {
-        throw new Error(`Field number must be specified for ${typeName}.${fieldName}`);
-      }
-      if (usedNums.has(fieldProto.number)) {
-        throw new Error(
-          `Field number ${fieldProto.number} used by ${typeName}.${fieldName} is already used by another field.`,
-        );
-      }
-      usedNums.add(fieldProto.number);
       fields.push(fieldProto);
     } catch (e) {
       if (e instanceof TypeDefinitionError) {
@@ -318,7 +295,7 @@ function populateFields(typeName: string, fieldConfigs: ItemTypeConfig["fields"]
  */
 function populateReserved(
   message: DescriptorProto,
-  itemTypeConfig: Pick<ItemTypeConfig, "reservedFieldNums" | "reservedNames">,
+  itemTypeConfig: Pick<ItemTypeConfig, "reservedNames">,
 ) {
   for (const fieldName of itemTypeConfig.reservedNames ?? []) {
     if (message.field.some((field) => field.name === fieldName)) {
@@ -327,22 +304,6 @@ function populateReserved(
       );
     }
     message.reservedName.push(fieldName);
-  }
-
-  for (const fieldNum of itemTypeConfig.reservedFieldNums?.sort() ?? []) {
-    if (message.field.some((field) => field.number === fieldNum)) {
-      throw new Error(
-        `Field number ${fieldNum} is reserved in ${message.name} but is also used as a field number.`,
-      );
-    }
-    const lastRange = message.reservedRange[message.reservedRange.length - 1];
-    if (lastRange && lastRange.end === fieldNum) {
-      lastRange.end++;
-    } else {
-      message.reservedRange.push(
-        create(DescriptorProto_ReservedRangeSchema, { start: fieldNum, end: fieldNum + 1 }),
-      );
-    }
   }
 }
 
