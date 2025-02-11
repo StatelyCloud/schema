@@ -38,12 +38,13 @@ export interface SchemaType {
   array?: boolean;
 
   /**
-   * The default value for this type. This is used when a field is not set. If
-   * this isn't specified, the default is the "zero value" for the type - null
-   * for messages, zero for numbers and enums, false for booleans, and empty for
-   * arrays, strings and byte arrays.
+   * The default value for this type. This is returned on read when a field is
+   * not set. This value won't actually be saved into the database. If this
+   * isn't specified, the default is the "zero value" for the type - null for
+   * messages, zero for numbers and enums, false for booleans, and empty for
+   * arrays, strings and byte arrays. A required field cannot be the zero value.
    */
-  // default?: string | number | bigint | boolean | null;
+  readDefault?: unknown;
 
   /**
    * Whether this type as a whole is deprecated. This can affect generated code.
@@ -307,12 +308,14 @@ export function resolveType(type: SchemaType): {
    */
   validations: string[];
   interpretAs?: SchemaType["interpretAs"];
+  readDefault?: SchemaType["readDefault"];
 } {
   const validations: string[] = [];
 
   let underlyingType: Exclude<SchemaType["parentType"], SchemaType> | undefined;
   let label: FieldDescriptorProto_Label | undefined;
   let interpretAs: SchemaType["interpretAs"] | undefined;
+  let readDefault: SchemaType["readDefault"] | undefined;
 
   // Iterate through a chain of types to determine the set of resolved options.
   let currentType: SchemaType = type;
@@ -330,6 +333,11 @@ export function resolveType(type: SchemaType): {
     // Accumulate all validations.
     if (currentType.valid) {
       validations.push(currentType.valid);
+    }
+
+    // Only take the "topmost" default value.
+    if (readDefault === undefined && currentType.readDefault !== undefined) {
+      readDefault = currentType.readDefault;
     }
 
     const parentType = currentType.parentType;
@@ -359,5 +367,6 @@ export function resolveType(type: SchemaType): {
     label: label ?? FieldDescriptorProto_Label.OPTIONAL,
     validations,
     interpretAs,
+    readDefault,
   };
 }

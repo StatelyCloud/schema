@@ -115,7 +115,7 @@ export type Field = {
   required?: boolean;
 
   // TODO: SourceCodeInfo
-} & Pick<SchemaType, "valid"> & // Rather than force people to use a new type just to set one of these type options, we allow overriding them at the field level
+} & Pick<SchemaType, "readDefault" | "valid"> & // Rather than force people to use a new type just to set one of these type options, we allow overriding them at the field level
   // Only one of these options can be set:
   (FieldFromMetadata | FieldInitialValue) /* | FieldFromExpression */;
 
@@ -230,6 +230,11 @@ export function field(fieldName: string, fieldConfig: Field): FieldDescriptorPro
 
   if (field.type !== undefined) {
     statelyOptions.type = convertTypedOption(field.type, typeInfo.interpretAs);
+  }
+
+  const defaultValue = stringifyDefault(fieldConfig.readDefault);
+  if (defaultValue !== undefined) {
+    statelyOptions.readDefault = defaultValue;
   }
 
   // set custom options
@@ -399,5 +404,55 @@ function convertTypedOption(
     }
     default:
       return { case: undefined, value: undefined };
+  }
+}
+
+/**
+ * This massages an unknown type into a Stately-serializable type. This is used
+ * to serialize default values for fields.
+ */
+function stringifyDefault(def: unknown): undefined | string {
+  if (def === undefined || def === null) {
+    return undefined;
+  }
+
+  switch (typeof def) {
+    case "undefined":
+      return undefined;
+    case "number":
+    case "string":
+    case "boolean":
+    case "bigint":
+    case "symbol":
+      return def.toString();
+    case "function":
+      throw new Error("Cannot serialize a function as a default value");
+    case "object":
+      // TODO: handle more types here (e.g. our UUID type when we make it)
+      if (Array.isArray(def)) {
+        return def.map(stringifyDefault).toString();
+      } else if (def instanceof Uint8Array) {
+        return Buffer.from(def).toString("base64");
+      } else if (def instanceof Date) {
+        return def.toISOString();
+      } else if (Symbol.iterator in def && typeof def[Symbol.iterator] === "function") {
+        // Handles Set, other iterables
+        return JSON.stringify(Array.from(def as Iterable<unknown>).map(stringifyDefault));
+      }
+      if (Object.getPrototypeOf(def) === Object.prototype || Object.getPrototypeOf(def) === null) {
+        return JSON.stringify(
+          Object.fromEntries(
+            Object.entries(
+              def as {
+                [s: string]: unknown;
+              },
+            ).map(([k, v]) => [k, stringifyDefault(v)]),
+          ),
+        );
+      }
+      throw new Error(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        `Cannot serialize object of type ${Object.getPrototypeOf(def).constructor.name}`,
+      );
   }
 }

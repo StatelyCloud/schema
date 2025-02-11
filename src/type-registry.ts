@@ -124,7 +124,8 @@ function configsEqual(a: TypeConfig, b: TypeConfig) {
       return (
         a.config.parentType === b.config.parentType &&
         a.config.interpretAs === b.config.interpretAs &&
-        a.config.valid === b.config.valid
+        a.config.valid === b.config.valid &&
+        deepEqual(a.config.readDefault, b.config.readDefault)
       );
   }
 }

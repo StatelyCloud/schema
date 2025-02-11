@@ -183,11 +183,6 @@ export declare type AddField = Message<"stately.schemamodel.AddField"> & {
    * name is the name of the field to add. This should be used to look up the
    * descriptor for that field in the new schema.
    *
-   * TODO: The other option is to include the full FieldDescriptorProto here:
-   * field is the full spec for the field to add, including any Stately
-   * extensions.
-   * google.protobuf.FieldDescriptorProto field = 1 [(buf.validate.field).required = true];
-   *
    * @generated from field: string name = 1;
    */
   name: string;
@@ -212,6 +207,38 @@ export declare type RemoveField = Message<"stately.schemamodel.RemoveField"> & {
    * @generated from field: string name = 1;
    */
   name: string;
+
+  /**
+   * The read_default specifies a read-materialized default for this field
+   * if it is not set. This is most useful when adding a new required field,
+   * since previously-stored items will not have this field set. However, you
+   * can also set a default for non-required fields. These defaults will be used
+   * when the item is read.
+   *
+   * Note that this isn't validated as a "required" field because commonly the
+   * default value will be the zero value for the field type, which is
+   * represented as an empty string.
+   *
+   * read_default's value depends on the underlying field type.
+   * * ObjectTypes is a JSON document that can be deserialized into the type of the field
+   *   using ProtoJSON rules: https://protobuf.dev/programming-guides/json/.
+   * * Durations can be either the golang format of "300ms", "-1.5h" or "2h45m"
+   *   or a number.
+   * * Timestamps can either be the RFC3339 format or a number.
+   * * Enum Values can be the string name of the enum value or ordinal.
+   * * For strings, it is the string value.
+   * * For all other numbers, it is the number value.
+   * * Bytes can either be the base64-encoded string or UUID string if the field
+   *   is interpreted as a UUID.
+   *
+   * Keep in mind that some of the types might not exactly line up - for
+   * example, ProtoJSON might specify that an int64 must always be a string, but
+   * this JSON might contain a number instead if it happens to fit in the JSON
+   * number range.
+   *
+   * @generated from field: string read_default = 2;
+   */
+  readDefault: string;
 };
 
 /**

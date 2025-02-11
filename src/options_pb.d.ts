@@ -206,6 +206,10 @@ export declare const Ttl_TtlSourceSchema: GenEnum<Ttl_TtlSource>;
  */
 export declare type FieldOptions = Message<"stately.schemamodel.FieldOptions"> & {
   /**
+   * TODO: Originally I imagined we'd have a bunch more options that are
+   * type-specific, but it turns out that it's mostly just the interpret_as
+   * options. Replace this with a oneof of the string/bytes/number interpret_as?
+   *
    * @generated from oneof stately.schemamodel.FieldOptions.type
    */
   type:
@@ -297,13 +301,6 @@ export declare type FieldOptions = Message<"stately.schemamodel.FieldOptions"> &
       }
     | {
         /**
-         * @generated from field: stately.schemamodel.BoolOptions bool = 13;
-         */
-        value: BoolOptions;
-        case: "bool";
-      }
-    | {
-        /**
          * @generated from field: stately.schemamodel.StringOptions string = 14;
          */
         value: StringOptions;
@@ -349,6 +346,38 @@ export declare type FieldOptions = Message<"stately.schemamodel.FieldOptions"> &
         case: "fromMetadata";
       }
     | { case: undefined; value?: undefined };
+
+  /**
+   * The read_default specifies a read-materialized default for this field
+   * if it is not set. This is most useful when adding a new required field,
+   * since previously-stored items will not have this field set. However, you
+   * can also set a default for non-required fields. These defaults will be used
+   * when the item is read.
+   *
+   * Note that this isn't validated as a "required" field because commonly the
+   * default value will be the zero value for the field type, which is
+   * represented as an empty string.
+   *
+   * read_default's value depends on the underlying field type.
+   * * ObjectTypes is a JSON document that can be deserialized into the type of the field
+   *   using ProtoJSON rules: https://protobuf.dev/programming-guides/json/.
+   * * Durations can be either the golang format of "300ms", "-1.5h" or "2h45m"
+   *   or a number.
+   * * Timestamps can either be the RFC3339 format or a number.
+   * * Enum Values can be the string name of the enum value or ordinal.
+   * * For strings, it is the string value.
+   * * For all other numbers, it is the number value.
+   * * Bytes can either be the base64-encoded string or UUID string if the field
+   *   is interpreted as a UUID.
+   *
+   * Keep in mind that some of the types might not exactly line up - for
+   * example, ProtoJSON might specify that an int64 must always be a string, but
+   * this JSON might contain a number instead if it happens to fit in the JSON
+   * number range.
+   *
+   * @generated from field: string read_default = 16;
+   */
+  readDefault: string;
 };
 
 /**
@@ -452,14 +481,6 @@ export declare const FieldOptions_InitialValueSchema: GenEnum<FieldOptions_Initi
 /**
  * The following are options that differ based on the underlying type of the field.
  *
- * default sets the default value for this field. Usually a proto field's
- * default (unset) value would be 0, but if this is set, it will be used
- * instead when the field is unset. Setting this option implies the "optional"
- * (or field_presence.explicit) field option is also set to true, since
- * otherwise you could not distinguish between the field being unset and the
- * field being set to the default value.
- * float default = 1;
- *
  * @generated from message stately.schemamodel.FloatOptions
  */
 export declare type FloatOptions = Message<"stately.schemamodel.FloatOptions"> & {
@@ -479,14 +500,6 @@ export declare type FloatOptions = Message<"stately.schemamodel.FloatOptions"> &
 export declare const FloatOptionsSchema: GenMessage<FloatOptions>;
 
 /**
- * default sets the default value for this field. Usually a proto field's
- * default (unset) value would be 0, but if this is set, it will be used
- * instead when the field is unset. Setting this option implies the "optional"
- * (or field_presence.explicit) field option is also set to true, since
- * otherwise you could not distinguish between the field being unset and the
- * field being set to the default value.
- * double default = 1;
- *
  * @generated from message stately.schemamodel.DoubleOptions
  */
 export declare type DoubleOptions = Message<"stately.schemamodel.DoubleOptions"> & {
@@ -506,14 +519,6 @@ export declare type DoubleOptions = Message<"stately.schemamodel.DoubleOptions">
 export declare const DoubleOptionsSchema: GenMessage<DoubleOptions>;
 
 /**
- * default sets the default value for this field. Usually a proto field's
- * default (unset) value would be 0, but if this is set, it will be used
- * instead when the field is unset. Setting this option implies the "optional"
- * (or field_presence.explicit) field option is also set to true, since
- * otherwise you could not distinguish between the field being unset and the
- * field being set to the default value.
- * int32 default = 1;
- *
  * @generated from message stately.schemamodel.Int32Options
  */
 export declare type Int32Options = Message<"stately.schemamodel.Int32Options"> & {
@@ -533,14 +538,6 @@ export declare type Int32Options = Message<"stately.schemamodel.Int32Options"> &
 export declare const Int32OptionsSchema: GenMessage<Int32Options>;
 
 /**
- * default sets the default value for this field. Usually a proto field's
- * default (unset) value would be 0, but if this is set, it will be used
- * instead when the field is unset. Setting this option implies the "optional"
- * (or field_presence.explicit) field option is also set to true, since
- * otherwise you could not distinguish between the field being unset and the
- * field being set to the default value.
- * int64 default = 1;
- *
  * @generated from message stately.schemamodel.Int64Options
  */
 export declare type Int64Options = Message<"stately.schemamodel.Int64Options"> & {
@@ -560,14 +557,6 @@ export declare type Int64Options = Message<"stately.schemamodel.Int64Options"> &
 export declare const Int64OptionsSchema: GenMessage<Int64Options>;
 
 /**
- * default sets the default value for this field. Usually a proto field's
- * default (unset) value would be 0, but if this is set, it will be used
- * instead when the field is unset. Setting this option implies the "optional"
- * (or field_presence.explicit) field option is also set to true, since
- * otherwise you could not distinguish between the field being unset and the
- * field being set to the default value.
- * uint32 default = 1;
- *
  * @generated from message stately.schemamodel.UInt32Options
  */
 export declare type UInt32Options = Message<"stately.schemamodel.UInt32Options"> & {
@@ -587,14 +576,6 @@ export declare type UInt32Options = Message<"stately.schemamodel.UInt32Options">
 export declare const UInt32OptionsSchema: GenMessage<UInt32Options>;
 
 /**
- * default sets the default value for this field. Usually a proto field's
- * default (unset) value would be 0, but if this is set, it will be used
- * instead when the field is unset. Setting this option implies the "optional"
- * (or field_presence.explicit) field option is also set to true, since
- * otherwise you could not distinguish between the field being unset and the
- * field being set to the default value.
- * uint64 default = 1;
- *
  * @generated from message stately.schemamodel.UInt64Options
  */
 export declare type UInt64Options = Message<"stately.schemamodel.UInt64Options"> & {
@@ -614,14 +595,6 @@ export declare type UInt64Options = Message<"stately.schemamodel.UInt64Options">
 export declare const UInt64OptionsSchema: GenMessage<UInt64Options>;
 
 /**
- * default sets the default value for this field. Usually a proto field's
- * default (unset) value would be 0, but if this is set, it will be used
- * instead when the field is unset. Setting this option implies the "optional"
- * (or field_presence.explicit) field option is also set to true, since
- * otherwise you could not distinguish between the field being unset and the
- * field being set to the default value.
- * sint32 default = 1;
- *
  * @generated from message stately.schemamodel.SInt32Options
  */
 export declare type SInt32Options = Message<"stately.schemamodel.SInt32Options"> & {
@@ -641,14 +614,6 @@ export declare type SInt32Options = Message<"stately.schemamodel.SInt32Options">
 export declare const SInt32OptionsSchema: GenMessage<SInt32Options>;
 
 /**
- * default sets the default value for this field. Usually a proto field's
- * default (unset) value would be 0, but if this is set, it will be used
- * instead when the field is unset. Setting this option implies the "optional"
- * (or field_presence.explicit) field option is also set to true, since
- * otherwise you could not distinguish between the field being unset and the
- * field being set to the default value.
- * sint64 default = 1;
- *
  * @generated from message stately.schemamodel.SInt64Options
  */
 export declare type SInt64Options = Message<"stately.schemamodel.SInt64Options"> & {
@@ -668,14 +633,6 @@ export declare type SInt64Options = Message<"stately.schemamodel.SInt64Options">
 export declare const SInt64OptionsSchema: GenMessage<SInt64Options>;
 
 /**
- * default sets the default value for this field. Usually a proto field's
- * default (unset) value would be 0, but if this is set, it will be used
- * instead when the field is unset. Setting this option implies the "optional"
- * (or field_presence.explicit) field option is also set to true, since
- * otherwise you could not distinguish between the field being unset and the
- * field being set to the default value.
- * fixed32 default = 1;
- *
  * @generated from message stately.schemamodel.Fixed32Options
  */
 export declare type Fixed32Options = Message<"stately.schemamodel.Fixed32Options"> & {
@@ -695,14 +652,6 @@ export declare type Fixed32Options = Message<"stately.schemamodel.Fixed32Options
 export declare const Fixed32OptionsSchema: GenMessage<Fixed32Options>;
 
 /**
- * default sets the default value for this field. Usually a proto field's
- * default (unset) value would be 0, but if this is set, it will be used
- * instead when the field is unset. Setting this option implies the "optional"
- * (or field_presence.explicit) field option is also set to true, since
- * otherwise you could not distinguish between the field being unset and the
- * field being set to the default value.
- * fixed64 default = 1;
- *
  * @generated from message stately.schemamodel.Fixed64Options
  */
 export declare type Fixed64Options = Message<"stately.schemamodel.Fixed64Options"> & {
@@ -722,14 +671,6 @@ export declare type Fixed64Options = Message<"stately.schemamodel.Fixed64Options
 export declare const Fixed64OptionsSchema: GenMessage<Fixed64Options>;
 
 /**
- * default sets the default value for this field. Usually a proto field's
- * default (unset) value would be 0, but if this is set, it will be used
- * instead when the field is unset. Setting this option implies the "optional"
- * (or field_presence.explicit) field option is also set to true, since
- * otherwise you could not distinguish between the field being unset and the
- * field being set to the default value.
- * sfixed32 default = 1;
- *
  * @generated from message stately.schemamodel.SFixed32Options
  */
 export declare type SFixed32Options = Message<"stately.schemamodel.SFixed32Options"> & {
@@ -749,14 +690,6 @@ export declare type SFixed32Options = Message<"stately.schemamodel.SFixed32Optio
 export declare const SFixed32OptionsSchema: GenMessage<SFixed32Options>;
 
 /**
- * default sets the default value for this field. Usually a proto field's
- * default (unset) value would be 0, but if this is set, it will be used
- * instead when the field is unset. Setting this option implies the "optional"
- * (or field_presence.explicit) field option is also set to true, since
- * otherwise you could not distinguish between the field being unset and the
- * field being set to the default value.
- * sfixed64 default = 1;
- *
  * @generated from message stately.schemamodel.SFixed64Options
  */
 export declare type SFixed64Options = Message<"stately.schemamodel.SFixed64Options"> & {
@@ -776,33 +709,6 @@ export declare type SFixed64Options = Message<"stately.schemamodel.SFixed64Optio
 export declare const SFixed64OptionsSchema: GenMessage<SFixed64Options>;
 
 /**
- * default sets the default value for this field. Usually a proto field's
- * default (unset) value would be 0, but if this is set, it will be used
- * instead when the field is unset. Setting this option implies the "optional"
- * (or field_presence.explicit) field option is also set to true, since
- * otherwise you could not distinguish between the field being unset and the
- * field being set to the default value.
- * bool default = 1;
- *
- * @generated from message stately.schemamodel.BoolOptions
- */
-export declare type BoolOptions = Message<"stately.schemamodel.BoolOptions"> & {};
-
-/**
- * Describes the message stately.schemamodel.BoolOptions.
- * Use `create(BoolOptionsSchema)` to create a new message.
- */
-export declare const BoolOptionsSchema: GenMessage<BoolOptions>;
-
-/**
- * default sets the default value for this field. Usually a proto field's
- * default (unset) value would be "", but if this is set, it will be used
- * instead when the field is unset. Setting this option implies the "optional"
- * (or field_presence.explicit) field option is also set to true, since
- * otherwise you could not distinguish between the field being unset and the
- * field being set to the default value.
- * string default = 1;
- *
  * @generated from message stately.schemamodel.StringOptions
  */
 export declare type StringOptions = Message<"stately.schemamodel.StringOptions"> & {
@@ -822,14 +728,6 @@ export declare type StringOptions = Message<"stately.schemamodel.StringOptions">
 export declare const StringOptionsSchema: GenMessage<StringOptions>;
 
 /**
- * default sets the default value for this field. Usually a proto field's
- * default (unset) value would be an empty byte string, but if this is set, it
- * will be used instead when the field is unset. Setting this option implies
- * the "optional" (or field_presence.explicit) field option is also set to
- * true, since otherwise you could not distinguish between the field being
- * unset and the field being set to the default value.
- * bytes default = 1;
- *
  * @generated from message stately.schemamodel.BytesOptions
  */
 export declare type BytesOptions = Message<"stately.schemamodel.BytesOptions"> & {
@@ -955,10 +853,6 @@ export enum StringInterpretAs {
 
   /**
    * The string is a URL. The URL should be validated.
-   *
-   * The string is stringified UUID. Prefer to use BYTES_INTERPRET_AS_UUID.
-   * STRING_INTERPRET_AS_UUID = 3;
-   * TODO: STRING_INTERPRET_AS_IP_ADDRESS? How many stringy versions of things would we actually want to support?
    *
    * @generated from enum value: STRING_INTERPRET_AS_URL = 2;
    */
