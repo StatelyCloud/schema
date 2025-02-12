@@ -15,11 +15,11 @@ import {
   BytesInterpretAs,
   BytesOptionsSchema,
   DoubleOptionsSchema,
-  FieldOptions_FromMetadata,
-  FieldOptions_InitialValue,
   Fixed32OptionsSchema,
   Fixed64OptionsSchema,
   FloatOptionsSchema,
+  FromMetadata,
+  InitialValue,
   Int32OptionsSchema,
   Int64OptionsSchema,
   NumberInterpretAs,
@@ -121,23 +121,17 @@ export type Field = {
 
 /* Mappings between DSL string options and protobuf options */
 
-const fromMetadataConvert: Record<
-  NonNullable<FieldFromMetadata["fromMetadata"]>,
-  FieldOptions_FromMetadata
-> = {
-  createdAtTime: FieldOptions_FromMetadata.CREATED_AT_TIME,
-  lastModifiedAtTime: FieldOptions_FromMetadata.LAST_MODIFIED_AT_TIME,
-  createdAtVersion: FieldOptions_FromMetadata.CREATED_AT_VERSION,
-  lastModifiedAtVersion: FieldOptions_FromMetadata.LAST_MODIFIED_AT_VERSION,
+const fromMetadataConvert: Record<NonNullable<FieldFromMetadata["fromMetadata"]>, FromMetadata> = {
+  createdAtTime: FromMetadata.CREATED_AT_TIME,
+  lastModifiedAtTime: FromMetadata.LAST_MODIFIED_AT_TIME,
+  createdAtVersion: FromMetadata.CREATED_AT_VERSION,
+  lastModifiedAtVersion: FromMetadata.LAST_MODIFIED_AT_VERSION,
 };
 
-const fromInitialValue: Record<
-  NonNullable<FieldInitialValue["initialValue"]>,
-  FieldOptions_InitialValue
-> = {
-  sequence: FieldOptions_InitialValue.SEQUENCE,
-  uuid: FieldOptions_InitialValue.UUID,
-  rand53: FieldOptions_InitialValue.RAND53,
+const fromInitialValue: Record<NonNullable<FieldInitialValue["initialValue"]>, InitialValue> = {
+  sequence: InitialValue.SEQUENCE,
+  uuid: InitialValue.UUID,
+  rand53: InitialValue.RAND53,
 };
 
 type InterpretAsValues = NonNullable<SchemaType["interpretAs"]>;
@@ -411,7 +405,7 @@ function convertTypedOption(
  * This massages an unknown type into a Stately-serializable type. This is used
  * to serialize default values for fields.
  */
-function stringifyDefault(def: unknown): undefined | string {
+export function stringifyDefault(def: unknown): undefined | string {
   if (def === undefined || def === null) {
     return undefined;
   }

@@ -328,9 +328,9 @@ export declare type FieldOptions = Message<"stately.schemamodel.FieldOptions"> &
          * message, but that feels unnecessary.
          * TODO: Maybe rename this "generate_id" to be more specific
          *
-         * @generated from field: stately.schemamodel.FieldOptions.InitialValue initial_value = 24;
+         * @generated from field: stately.schemamodel.InitialValue initial_value = 24;
          */
-        value: FieldOptions_InitialValue;
+        value: InitialValue;
         case: "initialValue";
       }
     | {
@@ -340,9 +340,9 @@ export declare type FieldOptions = Message<"stately.schemamodel.FieldOptions"> &
          * specified in this field by customers is ignored, as it will be populated
          * by the system.
          *
-         * @generated from field: stately.schemamodel.FieldOptions.FromMetadata from_metadata = 25;
+         * @generated from field: stately.schemamodel.FromMetadata from_metadata = 25;
          */
-        value: FieldOptions_FromMetadata;
+        value: FromMetadata;
         case: "fromMetadata";
       }
     | { case: undefined; value?: undefined };
@@ -385,98 +385,6 @@ export declare type FieldOptions = Message<"stately.schemamodel.FieldOptions"> &
  * Use `create(FieldOptionsSchema)` to create a new message.
  */
 export declare const FieldOptionsSchema: GenMessage<FieldOptions>;
-
-/**
- * @generated from enum stately.schemamodel.FieldOptions.FromMetadata
- */
-export enum FieldOptions_FromMetadata {
-  /**
-   * @generated from enum value: FROM_METADATA_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * Populate this field with the timestamp when the item was first created.
-   *
-   * @generated from enum value: FROM_METADATA_CREATED_AT_TIME = 1;
-   */
-  CREATED_AT_TIME = 1,
-
-  /**
-   * Populate this field with the timestamp when the item was most recently modified.
-   *
-   * @generated from enum value: FROM_METADATA_LAST_MODIFIED_AT_TIME = 2;
-   */
-  LAST_MODIFIED_AT_TIME = 2,
-
-  /**
-   * Populate this field with the group version when the item was first created.
-   *
-   * @generated from enum value: FROM_METADATA_CREATED_AT_VERSION = 3;
-   */
-  CREATED_AT_VERSION = 3,
-
-  /**
-   * Populate this field with the group version when the item was most recently modified.
-   *
-   * @generated from enum value: FROM_METADATA_LAST_MODIFIED_AT_VERSION = 4;
-   */
-  LAST_MODIFIED_AT_VERSION = 4,
-}
-
-/**
- * Describes the enum stately.schemamodel.FieldOptions.FromMetadata.
- */
-export declare const FieldOptions_FromMetadataSchema: GenEnum<FieldOptions_FromMetadata>;
-
-/**
- * InitialValue specifies where the initial value for a field should come from
- * if it is not explicitly set when created. All of these values would be
- * assigned by the server at creation time.
- *
- * @generated from enum stately.schemamodel.FieldOptions.InitialValue
- */
-export enum FieldOptions_InitialValue {
-  /**
-   * @generated from enum value: INITIAL_VALUE_NONE = 0;
-   */
-  NONE = 0,
-
-  /**
-   * SEQUENCE will assign the field a monotonically increasing, contiguous ID
-   * that is unique *within the parent path and item type*. This is only valid
-   * for a numeric ID field of a non-root item.
-   *
-   * @generated from enum value: INITIAL_VALUE_SEQUENCE = 1;
-   */
-  SEQUENCE = 1,
-
-  /**
-   * UUID will assign the field a globally unique, random 128-bit UUIDv4. This
-   * will be encoded in the item key path as a binary ID. This is usable
-   * anywhere, in any store config. This is only valid for bytes types.
-   *
-   * @generated from enum value: INITIAL_VALUE_UUID = 2;
-   */
-  UUID = 2,
-
-  /**
-   * RAND53 will assign the field a random 53-bit numeric ID that is unique
-   * *within the parent path and item type*, but is not globally unique. This is
-   * usable anywhere, in any store config. We use 53 bits instead of 64 because
-   * 53 bits is still a lot of bits, and it's the largest integer that can be
-   * represented exactly in JavaScript. This is only valid for a numeric ID
-   * field of a non-root item.
-   *
-   * @generated from enum value: INITIAL_VALUE_RAND53 = 4;
-   */
-  RAND53 = 4,
-}
-
-/**
- * Describes the enum stately.schemamodel.FieldOptions.InitialValue.
- */
-export declare const FieldOptions_InitialValueSchema: GenEnum<FieldOptions_InitialValue>;
 
 /**
  * The following are options that differ based on the underlying type of the field.
@@ -745,6 +653,98 @@ export declare type BytesOptions = Message<"stately.schemamodel.BytesOptions"> &
  * Use `create(BytesOptionsSchema)` to create a new message.
  */
 export declare const BytesOptionsSchema: GenMessage<BytesOptions>;
+
+/**
+ * @generated from enum stately.schemamodel.FromMetadata
+ */
+export enum FromMetadata {
+  /**
+   * @generated from enum value: FROM_METADATA_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Populate this field with the timestamp when the item was first created.
+   *
+   * @generated from enum value: FROM_METADATA_CREATED_AT_TIME = 1;
+   */
+  CREATED_AT_TIME = 1,
+
+  /**
+   * Populate this field with the timestamp when the item was most recently modified.
+   *
+   * @generated from enum value: FROM_METADATA_LAST_MODIFIED_AT_TIME = 2;
+   */
+  LAST_MODIFIED_AT_TIME = 2,
+
+  /**
+   * Populate this field with the group version when the item was first created.
+   *
+   * @generated from enum value: FROM_METADATA_CREATED_AT_VERSION = 3;
+   */
+  CREATED_AT_VERSION = 3,
+
+  /**
+   * Populate this field with the group version when the item was most recently modified.
+   *
+   * @generated from enum value: FROM_METADATA_LAST_MODIFIED_AT_VERSION = 4;
+   */
+  LAST_MODIFIED_AT_VERSION = 4,
+}
+
+/**
+ * Describes the enum stately.schemamodel.FromMetadata.
+ */
+export declare const FromMetadataSchema: GenEnum<FromMetadata>;
+
+/**
+ * InitialValue specifies where the initial value for a field should come from
+ * if it is not explicitly set when created. All of these values would be
+ * assigned by the server at creation time.
+ *
+ * @generated from enum stately.schemamodel.InitialValue
+ */
+export enum InitialValue {
+  /**
+   * @generated from enum value: INITIAL_VALUE_NONE = 0;
+   */
+  NONE = 0,
+
+  /**
+   * SEQUENCE will assign the field a monotonically increasing, contiguous ID
+   * that is unique *within the parent path and item type*. This is only valid
+   * for a numeric ID field of a non-root item.
+   *
+   * @generated from enum value: INITIAL_VALUE_SEQUENCE = 1;
+   */
+  SEQUENCE = 1,
+
+  /**
+   * UUID will assign the field a globally unique, random 128-bit UUIDv4. This
+   * will be encoded in the item key path as a binary ID. This is usable
+   * anywhere, in any store config. This is only valid for bytes types.
+   *
+   * @generated from enum value: INITIAL_VALUE_UUID = 2;
+   */
+  UUID = 2,
+
+  /**
+   * RAND53 will assign the field a random 53-bit numeric ID that is unique
+   * *within the parent path and item type*, but is not globally unique. This is
+   * usable anywhere, in any store config. We use 53 bits instead of 64 because
+   * 53 bits is still a lot of bits, and it's the largest integer that can be
+   * represented exactly in JavaScript. This is only valid for a numeric ID
+   * field of a non-root item.
+   *
+   * @generated from enum value: INITIAL_VALUE_RAND53 = 4;
+   */
+  RAND53 = 4,
+}
+
+/**
+ * Describes the enum stately.schemamodel.InitialValue.
+ */
+export declare const InitialValueSchema: GenEnum<InitialValue>;
 
 /**
  * TODO: Not sure if I'll regret using a single "number" enum for ints and

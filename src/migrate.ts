@@ -1,5 +1,6 @@
 import { create } from "@bufbuild/protobuf";
 import { getPackageName } from "./driver.js";
+import { stringifyDefault } from "./fields.js";
 import {
   MigrateActionSchema,
   Migration,
@@ -60,15 +61,15 @@ class TypeMigrator {
    *  i.removeField("movie_id");
    * });
    */
-  removeField(name: string) {
+  removeField(name: string, readDefault?: unknown) {
+    const defaultValue = stringifyDefault(readDefault);
     this.command.actions.push(
       create(MigrateActionSchema, {
         action: {
           case: "removeField",
           value: {
             name,
-            // TODO: add the default value option
-            // defaultValue: defaultValue ? toBinaryValue(defaultValue) : new Uint8Array(),
+            readDefault: defaultValue !== undefined ? defaultValue : "",
           },
         },
       }),
