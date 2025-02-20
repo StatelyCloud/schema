@@ -98,6 +98,28 @@ class TypeMigrator {
       }),
     );
   }
+
+  /**
+   * Mark a field in the type as having an updated read default value. You may only use readDefaults on fields that
+   * are marked as required. This is because non-required fields permit the use of the zero values, as such, Stately wouldn't
+   * be able to tell if the field was intentionally set to the zero value or if it was unset.
+   * @example
+   * m.changeType("Role", (i) => {
+   *   i.modifyFieldReadDefault("name"); // Specify the new default value in the schema
+   * });
+   */
+  modifyFieldReadDefault(name: string) {
+    this.command.actions.push(
+      create(MigrateActionSchema, {
+        action: {
+          case: "modifyFieldReadDefault",
+          value: {
+            name,
+          },
+        },
+      }),
+    );
+  }
 }
 
 /**

@@ -120,6 +120,13 @@ export declare type MigrateAction = Message<"stately.schemamodel.MigrateAction">
       }
     | {
         /**
+         * @generated from field: stately.schemamodel.ModifyFieldReadDefault modify_field_read_default = 14;
+         */
+        value: ModifyFieldReadDefault;
+        case: "modifyFieldReadDefault";
+      }
+    | {
+        /**
          * Item/Object/Enum Types
          *
          * @generated from field: stately.schemamodel.RenameType rename_type = 6;
@@ -172,6 +179,30 @@ export declare type MigrateAction = Message<"stately.schemamodel.MigrateAction">
  * Use `create(MigrateActionSchema)` to create a new message.
  */
 export declare const MigrateActionSchema: GenMessage<MigrateAction>;
+
+/**
+ * ModifyFieldReadDefault changes the read default value of a field in an item/object type.
+ * This will only affect schema versions moving forward - older schema versions will
+ * maintain their original default values.
+ *
+ * @generated from message stately.schemamodel.ModifyFieldReadDefault
+ */
+export declare type ModifyFieldReadDefault =
+  Message<"stately.schemamodel.ModifyFieldReadDefault"> & {
+    /**
+     * name is the name of the field to modify. This can be used to look up the
+     * descriptor for that field in the new schema.
+     *
+     * @generated from field: string name = 1;
+     */
+    name: string;
+  };
+
+/**
+ * Describes the message stately.schemamodel.ModifyFieldReadDefault.
+ * Use `create(ModifyFieldReadDefaultSchema)` to create a new message.
+ */
+export declare const ModifyFieldReadDefaultSchema: GenMessage<ModifyFieldReadDefault>;
 
 /**
  * AddField adds an entirely new, full-specified field to an item/object type.

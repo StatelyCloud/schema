@@ -11,7 +11,7 @@ import { file_buf_validate_validate } from "./buf/validate/validate_pb.js";
 export const file_migration =
   /*@__PURE__*/
   fileDesc(
-    "Cg9taWdyYXRpb24ucHJvdG8SE3N0YXRlbHkuc2NoZW1hbW9kZWwifwoJTWlncmF0aW9uEiMKE2Zyb21fc2NoZW1hX3ZlcnNpb24YASABKARCBrpIA8gBARIMCgRuYW1lGAIgASgJEj8KCGNvbW1hbmRzGAMgAygLMiUuc3RhdGVseS5zY2hlbWFtb2RlbC5NaWdyYXRpb25Db21tYW5kQga6SAPIAQEiagoQTWlncmF0aW9uQ29tbWFuZBIZCgl0eXBlX25hbWUYASABKAlCBrpIA8gBARI7CgdhY3Rpb25zGAIgAygLMiIuc3RhdGVseS5zY2hlbWFtb2RlbC5NaWdyYXRlQWN0aW9uQga6SAPIAQEirQQKDU1pZ3JhdGVBY3Rpb24SMgoJYWRkX2ZpZWxkGAIgASgLMh0uc3RhdGVseS5zY2hlbWFtb2RlbC5BZGRGaWVsZEgAEjgKDHJlbW92ZV9maWVsZBgDIAEoCzIgLnN0YXRlbHkuc2NoZW1hbW9kZWwuUmVtb3ZlRmllbGRIABI4CgxyZW5hbWVfZmllbGQYBCABKAsyIC5zdGF0ZWx5LnNjaGVtYW1vZGVsLlJlbmFtZUZpZWxkSAASNgoLcmVuYW1lX3R5cGUYBiABKAsyHy5zdGF0ZWx5LnNjaGVtYW1vZGVsLlJlbmFtZVR5cGVIABI2CgtyZW1vdmVfdHlwZRgHIAEoCzIfLnN0YXRlbHkuc2NoZW1hbW9kZWwuUmVtb3ZlVHlwZUgAEjAKCGFkZF90eXBlGAggASgLMhwuc3RhdGVseS5zY2hlbWFtb2RlbC5BZGRUeXBlSAASQQoRcmVuYW1lX2VudW1fdmFsdWUYCSABKAsyJC5zdGF0ZWx5LnNjaGVtYW1vZGVsLlJlbmFtZUVudW1WYWx1ZUgAEjsKDmFkZF9lbnVtX3ZhbHVlGAogASgLMiEuc3RhdGVseS5zY2hlbWFtb2RlbC5BZGRFbnVtVmFsdWVIABJBChFyZW1vdmVfZW51bV92YWx1ZRgLIAEoCzIkLnN0YXRlbHkuc2NoZW1hbW9kZWwuUmVtb3ZlRW51bVZhbHVlSABCDwoGYWN0aW9uEgW6SAIIASIgCghBZGRGaWVsZBIUCgRuYW1lGAEgASgJQga6SAPIAQEiOQoLUmVtb3ZlRmllbGQSFAoEbmFtZRgBIAEoCUIGukgDyAEBEhQKDHJlYWRfZGVmYXVsdBgCIAEoCSJBCgtSZW5hbWVGaWVsZBIYCghvbGRfbmFtZRgBIAEoCUIGukgDyAEBEhgKCG5ld19uYW1lGAIgASgJQga6SAPIAQEiJgoKUmVuYW1lVHlwZRIYCghuZXdfbmFtZRgCIAEoCUIGukgDyAEBIgwKClJlbW92ZVR5cGUiCQoHQWRkVHlwZSJRCg9SZW5hbWVFbnVtVmFsdWUSHgoOb2xkX3ZhbHVlX25hbWUYASABKAlCBrpIA8gBARIeCg5uZXdfdmFsdWVfbmFtZRgCIAEoCUIGukgDyAEBIi4KDEFkZEVudW1WYWx1ZRIeCg5uZXdfdmFsdWVfbmFtZRgBIAEoCUIGukgDyAEBIi0KD1JlbW92ZUVudW1WYWx1ZRIaCgp2YWx1ZV9uYW1lGAEgASgJQga6SAPIAQFClgEKF2NvbS5zdGF0ZWx5LnNjaGVtYW1vZGVsQg5NaWdyYXRpb25Qcm90b1ABogIDU1NYqgITU3RhdGVseS5TY2hlbWFtb2RlbMoCE1N0YXRlbHlcU2NoZW1hbW9kZWziAh9TdGF0ZWx5XFNjaGVtYW1vZGVsXEdQQk1ldGFkYXRh6gIUU3RhdGVseTo6U2NoZW1hbW9kZWxiBnByb3RvMw",
+    "Cg9taWdyYXRpb24ucHJvdG8SE3N0YXRlbHkuc2NoZW1hbW9kZWwifwoJTWlncmF0aW9uEiMKE2Zyb21fc2NoZW1hX3ZlcnNpb24YASABKARCBrpIA8gBARIMCgRuYW1lGAIgASgJEj8KCGNvbW1hbmRzGAMgAygLMiUuc3RhdGVseS5zY2hlbWFtb2RlbC5NaWdyYXRpb25Db21tYW5kQga6SAPIAQEiagoQTWlncmF0aW9uQ29tbWFuZBIZCgl0eXBlX25hbWUYASABKAlCBrpIA8gBARI7CgdhY3Rpb25zGAIgAygLMiIuc3RhdGVseS5zY2hlbWFtb2RlbC5NaWdyYXRlQWN0aW9uQga6SAPIAQEi/wQKDU1pZ3JhdGVBY3Rpb24SMgoJYWRkX2ZpZWxkGAIgASgLMh0uc3RhdGVseS5zY2hlbWFtb2RlbC5BZGRGaWVsZEgAEjgKDHJlbW92ZV9maWVsZBgDIAEoCzIgLnN0YXRlbHkuc2NoZW1hbW9kZWwuUmVtb3ZlRmllbGRIABI4CgxyZW5hbWVfZmllbGQYBCABKAsyIC5zdGF0ZWx5LnNjaGVtYW1vZGVsLlJlbmFtZUZpZWxkSAASUAoZbW9kaWZ5X2ZpZWxkX3JlYWRfZGVmYXVsdBgOIAEoCzIrLnN0YXRlbHkuc2NoZW1hbW9kZWwuTW9kaWZ5RmllbGRSZWFkRGVmYXVsdEgAEjYKC3JlbmFtZV90eXBlGAYgASgLMh8uc3RhdGVseS5zY2hlbWFtb2RlbC5SZW5hbWVUeXBlSAASNgoLcmVtb3ZlX3R5cGUYByABKAsyHy5zdGF0ZWx5LnNjaGVtYW1vZGVsLlJlbW92ZVR5cGVIABIwCghhZGRfdHlwZRgIIAEoCzIcLnN0YXRlbHkuc2NoZW1hbW9kZWwuQWRkVHlwZUgAEkEKEXJlbmFtZV9lbnVtX3ZhbHVlGAkgASgLMiQuc3RhdGVseS5zY2hlbWFtb2RlbC5SZW5hbWVFbnVtVmFsdWVIABI7Cg5hZGRfZW51bV92YWx1ZRgKIAEoCzIhLnN0YXRlbHkuc2NoZW1hbW9kZWwuQWRkRW51bVZhbHVlSAASQQoRcmVtb3ZlX2VudW1fdmFsdWUYCyABKAsyJC5zdGF0ZWx5LnNjaGVtYW1vZGVsLlJlbW92ZUVudW1WYWx1ZUgAQg8KBmFjdGlvbhIFukgCCAEiLgoWTW9kaWZ5RmllbGRSZWFkRGVmYXVsdBIUCgRuYW1lGAEgASgJQga6SAPIAQEiIAoIQWRkRmllbGQSFAoEbmFtZRgBIAEoCUIGukgDyAEBIjkKC1JlbW92ZUZpZWxkEhQKBG5hbWUYASABKAlCBrpIA8gBARIUCgxyZWFkX2RlZmF1bHQYAiABKAkiQQoLUmVuYW1lRmllbGQSGAoIb2xkX25hbWUYASABKAlCBrpIA8gBARIYCghuZXdfbmFtZRgCIAEoCUIGukgDyAEBIiYKClJlbmFtZVR5cGUSGAoIbmV3X25hbWUYAiABKAlCBrpIA8gBASIMCgpSZW1vdmVUeXBlIgkKB0FkZFR5cGUiUQoPUmVuYW1lRW51bVZhbHVlEh4KDm9sZF92YWx1ZV9uYW1lGAEgASgJQga6SAPIAQESHgoObmV3X3ZhbHVlX25hbWUYAiABKAlCBrpIA8gBASIuCgxBZGRFbnVtVmFsdWUSHgoObmV3X3ZhbHVlX25hbWUYASABKAlCBrpIA8gBASItCg9SZW1vdmVFbnVtVmFsdWUSGgoKdmFsdWVfbmFtZRgBIAEoCUIGukgDyAEBQpYBChdjb20uc3RhdGVseS5zY2hlbWFtb2RlbEIOTWlncmF0aW9uUHJvdG9QAaICA1NTWKoCE1N0YXRlbHkuU2NoZW1hbW9kZWzKAhNTdGF0ZWx5XFNjaGVtYW1vZGVs4gIfU3RhdGVseVxTY2hlbWFtb2RlbFxHUEJNZXRhZGF0YeoCFFN0YXRlbHk6OlNjaGVtYW1vZGVsYgZwcm90bzM",
     [file_buf_validate_validate],
   );
 
@@ -34,55 +34,61 @@ export const MigrationCommandSchema = /*@__PURE__*/ messageDesc(file_migration, 
 export const MigrateActionSchema = /*@__PURE__*/ messageDesc(file_migration, 2);
 
 /**
+ * Describes the message stately.schemamodel.ModifyFieldReadDefault.
+ * Use `create(ModifyFieldReadDefaultSchema)` to create a new message.
+ */
+export const ModifyFieldReadDefaultSchema = /*@__PURE__*/ messageDesc(file_migration, 3);
+
+/**
  * Describes the message stately.schemamodel.AddField.
  * Use `create(AddFieldSchema)` to create a new message.
  */
-export const AddFieldSchema = /*@__PURE__*/ messageDesc(file_migration, 3);
+export const AddFieldSchema = /*@__PURE__*/ messageDesc(file_migration, 4);
 
 /**
  * Describes the message stately.schemamodel.RemoveField.
  * Use `create(RemoveFieldSchema)` to create a new message.
  */
-export const RemoveFieldSchema = /*@__PURE__*/ messageDesc(file_migration, 4);
+export const RemoveFieldSchema = /*@__PURE__*/ messageDesc(file_migration, 5);
 
 /**
  * Describes the message stately.schemamodel.RenameField.
  * Use `create(RenameFieldSchema)` to create a new message.
  */
-export const RenameFieldSchema = /*@__PURE__*/ messageDesc(file_migration, 5);
+export const RenameFieldSchema = /*@__PURE__*/ messageDesc(file_migration, 6);
 
 /**
  * Describes the message stately.schemamodel.RenameType.
  * Use `create(RenameTypeSchema)` to create a new message.
  */
-export const RenameTypeSchema = /*@__PURE__*/ messageDesc(file_migration, 6);
+export const RenameTypeSchema = /*@__PURE__*/ messageDesc(file_migration, 7);
 
 /**
  * Describes the message stately.schemamodel.RemoveType.
  * Use `create(RemoveTypeSchema)` to create a new message.
  */
-export const RemoveTypeSchema = /*@__PURE__*/ messageDesc(file_migration, 7);
+export const RemoveTypeSchema = /*@__PURE__*/ messageDesc(file_migration, 8);
 
 /**
  * Describes the message stately.schemamodel.AddType.
  * Use `create(AddTypeSchema)` to create a new message.
  */
-export const AddTypeSchema = /*@__PURE__*/ messageDesc(file_migration, 8);
+export const AddTypeSchema = /*@__PURE__*/ messageDesc(file_migration, 9);
 
 /**
  * Describes the message stately.schemamodel.RenameEnumValue.
  * Use `create(RenameEnumValueSchema)` to create a new message.
  */
-export const RenameEnumValueSchema = /*@__PURE__*/ messageDesc(file_migration, 9);
+export const RenameEnumValueSchema = /*@__PURE__*/ messageDesc(file_migration, 10);
 
 /**
  * Describes the message stately.schemamodel.AddEnumValue.
  * Use `create(AddEnumValueSchema)` to create a new message.
  */
-export const AddEnumValueSchema = /*@__PURE__*/ messageDesc(file_migration, 10);
+export const AddEnumValueSchema = /*@__PURE__*/ messageDesc(file_migration, 11);
 
 /**
  * Describes the message stately.schemamodel.RemoveEnumValue.
  * Use `create(RemoveEnumValueSchema)` to create a new message.
  */
-export const RemoveEnumValueSchema = /*@__PURE__*/ messageDesc(file_migration, 11);
+export const RemoveEnumValueSchema = /*@__PURE__*/ messageDesc(file_migration, 12);

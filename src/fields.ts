@@ -409,6 +409,21 @@ export function stringifyDefault(def: unknown): undefined | string {
   if (def === undefined || def === null) {
     return undefined;
   }
+  const result = stringifyDefaultInner(def);
+  switch (typeof result) {
+    case "undefined":
+      return undefined;
+    case "string":
+      return result;
+    default:
+      return JSON.stringify(result);
+  }
+}
+
+export function stringifyDefaultInner(def: unknown): undefined | string | object {
+  if (def === undefined || def === null) {
+    return undefined;
+  }
 
   switch (typeof def) {
     case "undefined":
@@ -424,24 +439,22 @@ export function stringifyDefault(def: unknown): undefined | string {
     case "object":
       // TODO: handle more types here (e.g. our UUID type when we make it)
       if (Array.isArray(def)) {
-        return def.map(stringifyDefault).toString();
+        return def.map(stringifyDefaultInner);
       } else if (def instanceof Uint8Array) {
         return Buffer.from(def).toString("base64");
       } else if (def instanceof Date) {
         return def.toISOString();
       } else if (Symbol.iterator in def && typeof def[Symbol.iterator] === "function") {
         // Handles Set, other iterables
-        return JSON.stringify(Array.from(def as Iterable<unknown>).map(stringifyDefault));
+        return Array.from(def as Iterable<unknown>).map(stringifyDefaultInner);
       }
       if (Object.getPrototypeOf(def) === Object.prototype || Object.getPrototypeOf(def) === null) {
-        return JSON.stringify(
-          Object.fromEntries(
-            Object.entries(
-              def as {
-                [s: string]: unknown;
-              },
-            ).map(([k, v]) => [k, stringifyDefault(v)]),
-          ),
+        return Object.fromEntries(
+          Object.entries(
+            def as {
+              [s: string]: unknown;
+            },
+          ).map(([k, v]) => [k, stringifyDefaultInner(v)]),
         );
       }
       throw new Error(
