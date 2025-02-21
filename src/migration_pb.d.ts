@@ -110,13 +110,27 @@ export declare type MigrateAction = Message<"stately.schemamodel.MigrateAction">
       }
     | {
         /**
-         * TODO: ChangeFieldType change_field_type = ?;
-         * TODO: convert field to / from repeated
-         *
          * @generated from field: stately.schemamodel.RenameField rename_field = 4;
          */
         value: RenameField;
         case: "renameField";
+      }
+    | {
+        /**
+         * @generated from field: stately.schemamodel.MarkFieldAsRequired mark_field_as_required = 12;
+         */
+        value: MarkFieldAsRequired;
+        case: "markFieldAsRequired";
+      }
+    | {
+        /**
+         * TODO: ChangeFieldType change_field_type = ?;
+         * TODO: convert field to / from repeated
+         *
+         * @generated from field: stately.schemamodel.MarkFieldAsNotRequired mark_field_as_not_required = 13;
+         */
+        value: MarkFieldAsNotRequired;
+        case: "markFieldAsNotRequired";
       }
     | {
         /**
@@ -203,6 +217,84 @@ export declare type ModifyFieldReadDefault =
  * Use `create(ModifyFieldReadDefaultSchema)` to create a new message.
  */
 export declare const ModifyFieldReadDefaultSchema: GenMessage<ModifyFieldReadDefault>;
+
+/**
+ * MarkFieldAsRequired marks a field as required. The default to populate the field
+ * with is specified in the schema, not in the migration command here. This is
+ * because going from required: false -> true is a concern of the version enacting
+ * the change, not previous versions. Older items that don't have this field set
+ * will be populated with the default specified in the schema version enacting this
+ * change.
+ *
+ * @generated from message stately.schemamodel.MarkFieldAsRequired
+ */
+export declare type MarkFieldAsRequired = Message<"stately.schemamodel.MarkFieldAsRequired"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+};
+
+/**
+ * Describes the message stately.schemamodel.MarkFieldAsRequired.
+ * Use `create(MarkFieldAsRequiredSchema)` to create a new message.
+ */
+export declare const MarkFieldAsRequiredSchema: GenMessage<MarkFieldAsRequired>;
+
+/**
+ * MarkFieldAsNotRequired marks a field as not required. The default to populate the field
+ * with is specified by this migration command. This is because going from required: true
+ * -> false is a concern of the underlying storage of items that have this field set.
+ * Older client versions reading out newer items will see this field as not set, and
+ * will use the default specified here.
+ *
+ * @generated from message stately.schemamodel.MarkFieldAsNotRequired
+ */
+export declare type MarkFieldAsNotRequired =
+  Message<"stately.schemamodel.MarkFieldAsNotRequired"> & {
+    /**
+     * @generated from field: string name = 1;
+     */
+    name: string;
+
+    /**
+     * The read_default specifies a read-materialized default for this field
+     * if it is not set. This is most useful when adding a new required field,
+     * since previously-stored items will not have this field set. However, you
+     * can also set a default for non-required fields. These defaults will be used
+     * when the item is read.
+     *
+     * Note that this isn't validated as a "required" field because commonly the
+     * default value will be the zero value for the field type, which is
+     * represented as an empty string.
+     *
+     * read_default's value depends on the underlying field type.
+     * * ObjectTypes is a JSON document that can be deserialized into the type of the field
+     *   using ProtoJSON rules: https://protobuf.dev/programming-guides/json/.
+     * * Durations can be either the golang format of "300ms", "-1.5h" or "2h45m"
+     *   or a number.
+     * * Timestamps can either be the RFC3339 format or a number.
+     * * Enum Values can be the string name of the enum value or ordinal.
+     * * For strings, it is the string value.
+     * * For all other numbers, it is the number value.
+     * * Bytes can either be the base64-encoded string or UUID string if the field
+     *   is interpreted as a UUID.
+     *
+     * Keep in mind that some of the types might not exactly line up - for
+     * example, ProtoJSON might specify that an int64 must always be a string, but
+     * this JSON might contain a number instead if it happens to fit in the JSON
+     * number range.
+     *
+     * @generated from field: string read_default = 2;
+     */
+    readDefault: string;
+  };
+
+/**
+ * Describes the message stately.schemamodel.MarkFieldAsNotRequired.
+ * Use `create(MarkFieldAsNotRequiredSchema)` to create a new message.
+ */
+export declare const MarkFieldAsNotRequiredSchema: GenMessage<MarkFieldAsNotRequired>;
 
 /**
  * AddField adds an entirely new, full-specified field to an item/object type.

@@ -100,6 +100,53 @@ class TypeMigrator {
   }
 
   /**
+   * Mark a field in the type as having been required since the "from" version. Using this migration action requires
+   * that the field has a readDefault defined in your proposed schema. This is so that older items in Stately can be
+   * migrated to have a value for this field.
+   * @example
+   * m.changeType("Role", (i) => {
+   *   i.markFieldAsRequired("movie_id");
+   * });
+   */
+  markFieldAsRequired(name: string) {
+    this.command.actions.push(
+      create(MigrateActionSchema, {
+        action: {
+          case: "markFieldAsRequired",
+          value: {
+            name,
+          },
+        },
+      }),
+    );
+  }
+
+  /**
+   * Mark a field in the type as having been not required since the "from" version. Using this migration action requires
+   * passing in a readDefault value on this migration action. The reason the readDefault is required here, is so older
+   * clients will still observe this default value when reading items that were created before this field was migrated
+   * to be not required.
+   * @example
+   * m.changeType("Role", (i) => {
+   *   i.markFieldAsNotRequired("title", "Python Wrangler");
+   * });
+   */
+  markFieldAsNotRequired(name: string, readDefault?: unknown) {
+    const defaultValue = stringifyDefault(readDefault);
+    this.command.actions.push(
+      create(MigrateActionSchema, {
+        action: {
+          case: "markFieldAsNotRequired",
+          value: {
+            name,
+            readDefault: defaultValue !== undefined ? defaultValue : "",
+          },
+        },
+      }),
+    );
+  }
+
+  /**
    * Mark a field in the type as having an updated read default value. You may only use readDefaults on fields that
    * are marked as required. This is because non-required fields permit the use of the zero values, as such, Stately wouldn't
    * be able to tell if the field was intentionally set to the zero value or if it was unset.
