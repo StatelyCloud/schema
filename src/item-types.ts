@@ -5,6 +5,7 @@ import {
   MessageOptions_IndexSchema,
   MessageOptions_KeyPathSchema,
   MessageOptionsSchema as StatelyMessageOptionsSchema,
+  SupportedFeatures,
   Ttl_TtlSource,
   TtlSchema,
 } from "./options_pb.js";
@@ -79,7 +80,7 @@ export interface ItemTypeConfig {
    */
   // TODO: In the future there may be more options than just the template - in
   // that case this can be Plural<string | KeyPathConfig>
-  keyPath: Plural<PathTemplate>;
+  keyPath: Plural<PathTemplate | KeyPathConfig>;
 
   /**
    * The set of fields that are defined on this type.
@@ -92,6 +93,21 @@ export interface ItemTypeConfig {
    * deleted after some time.
    */
   ttl?: TTLConfig;
+
+  /**
+   * Whether or not an item type is syncable. Non-syncable item types will be
+   * omitted from SyncList responses. Non-syncable items are cheaper to store
+   * and write. The default is syncable.
+   */
+  syncable?: boolean;
+
+  /**
+   * Whether or not group versioning is enabled for this item type. Group
+   * versioned items are optimized for transactions that modify multiple
+   * items in the same group. All item types in a group must be versioned
+   * or not versioned. The default is versioned.
+   */
+  versioned?: boolean;
 
   /**
    * An optional set of indexes that should be maintained for this item type.
@@ -130,6 +146,38 @@ export type TTLConfig = {
       durationSeconds: number;
     }
 );
+
+/**
+ * Full configuration for a key path, including whether it is syncable and/or
+ * versioned.
+ */
+export interface KeyPathConfig {
+  /**
+   * The path template for the key path.
+   * @see PathTemplate
+   */
+  path: PathTemplate;
+
+  /**
+   * Whether this individual key path is syncable. An item type can have some key
+   * paths that are syncable and some that are not, as a way to control costs. If
+   * this option is not specified here, it inherits the value of the item type's
+   * `syncable` option, which defaults to `true`.
+   * @see ItemTypeConfig.syncable
+   */
+  syncable?: boolean;
+
+  /**
+   * Whether or not group versioning is enabled for this individual key path.
+   * This may save costs to turn off if different key paths in an item type
+   * are in different groups, and this key path is not going to be involved in
+   * transactions with other items in the same group. If this option is not
+   * specified here, it inherits the value of the item type's `versioned` flag,
+   * which defaults to `true`.
+   * @see ItemTypeConfig.versioned
+   */
+  versioned?: boolean;
+}
 
 /**
  * Configuration for a group-local index.
@@ -171,7 +219,18 @@ export function itemType(name: string, itemTypeConfig: ItemTypeConfig): SchemaTy
 
   // keyPath
   for (const keyPath of resolvePlural(itemTypeConfig.keyPath)) {
-    statelyOptions.keyPaths.push(create(MessageOptions_KeyPathSchema, { pathTemplate: keyPath }));
+    const keyConfig = typeof keyPath === "string" ? { path: keyPath } : keyPath;
+    const pathTemplate = keyConfig.path;
+    const syncable = keyConfig.syncable ?? itemTypeConfig.syncable ?? true;
+    const versioned = keyConfig.versioned ?? itemTypeConfig.versioned ?? true;
+
+    // now generate the full key path config
+    statelyOptions.keyPaths.push(
+      create(MessageOptions_KeyPathSchema, {
+        pathTemplate,
+        supportedFeatureFlags: resolveSupportedFeatures({ syncable, versioned }),
+      }),
+    );
   }
 
   // TTL
@@ -327,3 +386,25 @@ function populateReserved(
 //     }
 //   }
 // }
+
+/**
+ * resolveSupportedFeatures determines the supported features for a key path based
+ * on the syncable and versioned flags.
+ */
+function resolveSupportedFeatures({
+  syncable,
+  versioned,
+}: {
+  syncable: boolean;
+  versioned: boolean;
+}): SupportedFeatures {
+  let result = 0;
+  if (versioned) {
+    result |= SupportedFeatures.VERSIONED_GROUP;
+  }
+  if (syncable) {
+    result |= SupportedFeatures.SYNC;
+  }
+
+  return result;
+}

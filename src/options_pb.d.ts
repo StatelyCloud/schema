@@ -66,6 +66,21 @@ export declare type MessageOptions_KeyPath =
      * @generated from field: string path_template = 1;
      */
     pathTemplate: string;
+
+    /**
+     * supported_feature_flags is the set of flags that indicate which features
+     * are enabled.
+     * 1 << 1 = VERSIONED_GROUP
+     * 1 << 2 = SYNC
+     * So:
+     * 0 = NATIVE
+     * 1 = VERSIONED_GROUP
+     * 2 = NATIVE_SYNC // Not yet implemented
+     * 3 = VERSIONED_GROUP_SYNC
+     *
+     * @generated from field: stately.schemamodel.SupportedFeatures supported_feature_flags = 2;
+     */
+    supportedFeatureFlags: SupportedFeatures;
   };
 
 /**
@@ -653,6 +668,44 @@ export declare type BytesOptions = Message<"stately.schemamodel.BytesOptions"> &
  * Use `create(BytesOptionsSchema)` to create a new message.
  */
 export declare const BytesOptionsSchema: GenMessage<BytesOptions>;
+
+/**
+ * SupportedFeatures is the set of enum bit flags which
+ * are combined to indicate which features are enabled for a key path.
+ * Each enum value is a power of 2, so they can be combined with bitwise OR.
+ * For example, to indicate that a key path supports both VERSIONED_GROUP and SYNC,
+ * the supported_feature_flags would be 1 << 1 | 1 << 2 = 3.
+ *
+ * @generated from enum stately.schemamodel.SupportedFeatures
+ */
+export enum SupportedFeatures {
+  /**
+   * NONE does not represent any feature. This is not a valid value. I would have
+   * preferred to omit this but buf validate requires a zero value.
+   *
+   * @generated from enum value: NONE = 0;
+   */
+  NONE = 0,
+
+  /**
+   * VERSIONED_GROUP indicates that the key path supports group versioning.
+   *
+   * @generated from enum value: VERSIONED_GROUP = 1;
+   */
+  VERSIONED_GROUP = 1,
+
+  /**
+   * SYNC indicates that the key path supports syncing.
+   *
+   * @generated from enum value: SYNC = 2;
+   */
+  SYNC = 2,
+}
+
+/**
+ * Describes the enum stately.schemamodel.SupportedFeatures.
+ */
+export declare const SupportedFeaturesSchema: GenEnum<SupportedFeatures>;
 
 /**
  * @generated from enum stately.schemamodel.FromMetadata

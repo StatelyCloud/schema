@@ -6,6 +6,7 @@ import type { Message } from "@bufbuild/protobuf";
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv1";
 import type {
   BytesInterpretAs,
+  FromMetadata,
   InitialValue,
   MessageOptions,
   NumberInterpretAs,
@@ -98,18 +99,19 @@ export declare type MessageType = Message<"stately.schemamodel.MessageType"> & {
   typeStorageId: number;
 
   /**
-   * comments are per-line comments parsed from source code.
+   * comments are multi-line comments parsed from source code, where
+   * each line is separated by a '\n' character.
    *
-   * @generated from field: repeated string comments = 3;
+   * @generated from field: string comments = 3;
    */
-  comments: string[];
+  comments: string;
 
   /**
    * A set of validation constraints that must all be true for the message to be valid.
    *
-   * @generated from field: repeated stately.schemamodel.ValidationConstraints constraints = 4;
+   * @generated from field: repeated stately.schemamodel.Constraint validations = 4;
    */
-  constraints: ValidationConstraints[];
+  validations: Constraint[];
 
   /**
    * The fields of this object.
@@ -156,11 +158,12 @@ export declare type EnumType = Message<"stately.schemamodel.EnumType"> & {
   typeStorageId: number;
 
   /**
-   * comments are per-line comments parsed from source code.
+   * comments are multi-line comments parsed from source code, where
+   * each line is separated by a '\n' character.
    *
-   * @generated from field: repeated string comments = 4;
+   * @generated from field: string comments = 4;
    */
-  comments: string[];
+  comments: string;
 
   /**
    * The values this enum can take!
@@ -185,9 +188,9 @@ export declare type TypeAlias = Message<"stately.schemamodel.TypeAlias"> & {
   /**
    * The name of the alias type.
    *
-   * @generated from field: string alias_name = 1;
+   * @generated from field: string type_name = 1;
    */
-  aliasName: string;
+  typeName: string;
 
   /**
    * type_storage_id is the unique identifier for the underlying type alias. While this
@@ -201,25 +204,25 @@ export declare type TypeAlias = Message<"stately.schemamodel.TypeAlias"> & {
   typeStorageId: number;
 
   /**
-   * underlying_type is the type that the alias is for.
+   * element_type is the type that the alias is for.
    *
-   * @generated from field: stately.schemamodel.Type underlying_type = 3;
+   * @generated from field: stately.schemamodel.Type element_type = 3;
    */
-  underlyingType?: Type;
+  elementType?: Type;
 
   /**
    * comments are per-line comments parsed from source code that are associated with this type alias.
    *
-   * @generated from field: repeated string comments = 4;
+   * @generated from field: string comments = 4;
    */
-  comments: string[];
+  comments: string;
 
   /**
    * A set of validation constraints that must all be true for the type alias to be valid.
    *
-   * @generated from field: repeated stately.schemamodel.ValidationConstraints constraints = 5;
+   * @generated from field: repeated stately.schemamodel.Constraint validations = 5;
    */
-  constraints: ValidationConstraints[];
+  validations: Constraint[];
 };
 
 /**
@@ -263,11 +266,12 @@ export declare type Field = Message<"stately.schemamodel.Field"> & {
   fieldStorageNumber: number;
 
   /**
-   * comments are per-line comments parsed from source code.
+   * comments are multi-line comments parsed from source code, where
+   * each line is separated by a '\n' character.
    *
-   * @generated from field: repeated string comments = 4;
+   * @generated from field: string comments = 4;
    */
-  comments: string[];
+  comments: string;
 
   /**
    * require_non_zero is a flag that indicates that the field must be non-zero.
@@ -279,9 +283,9 @@ export declare type Field = Message<"stately.schemamodel.Field"> & {
   /**
    * A set of validation constraints that must all be true for the type alias to be valid.
    *
-   * @generated from field: repeated stately.schemamodel.ValidationConstraints constraints = 6;
+   * @generated from field: repeated stately.schemamodel.Constraint validations = 6;
    */
-  constraints: ValidationConstraints[];
+  validations: Constraint[];
 
   /**
    * field_type is the type of the field.
@@ -321,6 +325,26 @@ export declare type Field = Message<"stately.schemamodel.Field"> & {
    * @generated from field: string read_default = 8;
    */
   readDefault: string;
+
+  /**
+   * @generated from oneof stately.schemamodel.Field.value_option
+   */
+  valueOption:
+    | {
+        /**
+         * @generated from field: stately.schemamodel.FromMetadata from_metadata = 9;
+         */
+        value: FromMetadata;
+        case: "fromMetadata";
+      }
+    | {
+        /**
+         * @generated from field: stately.schemamodel.InitialValue initial_value = 10;
+         */
+        value: InitialValue;
+        case: "initialValue";
+      }
+    | { case: undefined; value?: undefined };
 };
 
 /**
@@ -334,37 +358,29 @@ export declare const FieldSchema: GenMessage<Field>;
  */
 export declare type EnumValue = Message<"stately.schemamodel.EnumValue"> & {
   /**
-   * value_name is the human-readable name of the enum value.
-   * This *must* be present for all fields generated by the DSL.
+   * short_name is the human-readable name of the enum value.
+   * This *must* be present for all enum values generated by the DSL.
    * This will be omitted when persisting the storage schema as a space optimization.
+   * The short_name _should not_ include the enum type name as a prefix.
    *
-   * @generated from field: string value_name = 1;
+   * @generated from field: string short_name = 1;
    */
-  valueName: string;
+  shortName: string;
 
   /**
-   * value_wire_ordinal is enum ordinal defined in the wire model.
-   * This will be omitted when persisting the storage schema as a space optimization.
+   * ordinal is enum ordinal, this must be consistent across storage and wire schema.
    *
-   * @generated from field: optional int32 value_wire_ordinal = 2;
+   * @generated from field: int32 ordinal = 2;
    */
-  valueWireOrdinal?: number;
+  ordinal: number;
 
   /**
-   * value_storage_number is the enum ordinal defined in the storage model.
-   * This will be zero for a schema definition generated by the DSL, but will be populated
-   * by the schema.Package parser and persisted with the wire and storage schema definitions.
+   * comments are multi-line comments parsed from source code, where
+   * each line is separated by a '\n' character.
    *
-   * @generated from field: optional int32 value_storage_number = 3;
+   * @generated from field: string comments = 4;
    */
-  valueStorageNumber?: number;
-
-  /**
-   * comments are per-line comments parsed from source code.
-   *
-   * @generated from field: repeated string comments = 4;
-   */
-  comments: string[];
+  comments: string;
 };
 
 /**
@@ -413,17 +429,28 @@ export declare type Type = Message<"stately.schemamodel.Type"> & {
       }
     | {
         /**
-         * @generated from field: stately.schemamodel.TypeRef type_ref = 5;
-         */
-        value: TypeRef;
-        case: "typeRef";
-      }
-    | {
-        /**
-         * @generated from field: stately.schemamodel.List list = 6;
+         * @generated from field: stately.schemamodel.List list = 5;
          */
         value: List;
         case: "list";
+      }
+    | {
+        /**
+         * reference_by_name is a reference to another type by name.
+         *
+         * @generated from field: string reference_by_name = 6;
+         */
+        value: string;
+        case: "referenceByName";
+      }
+    | {
+        /**
+         * reference_by_storage_id is a reference to another type by storage id.
+         *
+         * @generated from field: uint32 reference_by_storage_id = 7;
+         */
+        value: number;
+        case: "referenceByStorageId";
       }
     | { case: undefined; value?: undefined };
 };
@@ -435,54 +462,17 @@ export declare type Type = Message<"stately.schemamodel.Type"> & {
 export declare const TypeSchema: GenMessage<Type>;
 
 /**
- * A TypeRef is a reference to a defined type e.g. ItemType, ObjectType, EnumType, or TypeAlias,
- * which is referenced in the context of a field.
- *
- * @generated from message stately.schemamodel.TypeRef
- */
-export declare type TypeRef = Message<"stately.schemamodel.TypeRef"> & {
-  /**
-   * ref is the reference to the defined type. This will be a string if supplied by the DSL,
-   * but may be converted to a storage_id after the initial schema parsing.
-   *
-   * @generated from oneof stately.schemamodel.TypeRef.ref
-   */
-  ref:
-    | {
-        /**
-         * @generated from field: string name = 1;
-         */
-        value: string;
-        case: "name";
-      }
-    | {
-        /**
-         * @generated from field: uint32 storage_id = 2;
-         */
-        value: number;
-        case: "storageId";
-      }
-    | { case: undefined; value?: undefined };
-};
-
-/**
- * Describes the message stately.schemamodel.TypeRef.
- * Use `create(TypeRefSchema)` to create a new message.
- */
-export declare const TypeRefSchema: GenMessage<TypeRef>;
-
-/**
  * List represents a repeated type of a field.
  *
  * @generated from message stately.schemamodel.List
  */
 export declare type List = Message<"stately.schemamodel.List"> & {
   /**
-   * underlying_type is the type of the elements in the list.
+   * element_type is the type of the elements in the list.
    *
-   * @generated from field: stately.schemamodel.Type underlying_type = 1;
+   * @generated from field: stately.schemamodel.Type element_type = 1;
    */
-  underlyingType?: Type;
+  elementType?: Type;
 };
 
 /**
@@ -576,9 +566,9 @@ export declare type Number = Message<"stately.schemamodel.Number"> & {
 export declare const NumberSchema: GenMessage<Number>;
 
 /**
- * @generated from message stately.schemamodel.ValidationConstraints
+ * @generated from message stately.schemamodel.Constraint
  */
-export declare type ValidationConstraints = Message<"stately.schemamodel.ValidationConstraints"> & {
+export declare type Constraint = Message<"stately.schemamodel.Constraint"> & {
   /**
    * cel_expression is the CEL expression that must evaluate to true for the message to be valid.
    *
@@ -596,10 +586,10 @@ export declare type ValidationConstraints = Message<"stately.schemamodel.Validat
 };
 
 /**
- * Describes the message stately.schemamodel.ValidationConstraints.
- * Use `create(ValidationConstraintsSchema)` to create a new message.
+ * Describes the message stately.schemamodel.Constraint.
+ * Use `create(ConstraintSchema)` to create a new message.
  */
-export declare const ValidationConstraintsSchema: GenMessage<ValidationConstraints>;
+export declare const ConstraintSchema: GenMessage<Constraint>;
 
 /**
  * NumberKind is the set of all possible proto number kinds.

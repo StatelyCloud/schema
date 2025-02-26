@@ -44,10 +44,6 @@ class TypeMigrator {
           case: "addField",
           value: {
             name,
-            // TODO: add the default value option. To do that, we might have to
-            // resolve the field's type, or just pass the default along as
-            // another type and rely on the backend to do the right thing
-            // defaultValue: defaultValue ? toBinaryValue(defaultValue) : new Uint8Array(),
           },
         },
       }),
