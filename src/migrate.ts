@@ -52,9 +52,12 @@ class TypeMigrator {
 
   /**
    * Mark a field in the type as removed since the "from" version.
+   * If you are removing a field that is required, you must provide a readDefault value.
+   * Non-required fields must not have a readDefault value, as this would change the behavior
+   * of older clients that are reading items that were created before this field was removed.
    * @example
    * m.changeType("Role", (i) => {
-   *  i.removeField("movie_id");
+   *  i.removeField("movie_id", 1234);
    * });
    */
   removeField(name: string, readDefault?: unknown) {
