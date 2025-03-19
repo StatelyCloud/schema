@@ -3,12 +3,12 @@ import { GenMessage } from "@bufbuild/protobuf/codegenv1";
 import {
   EnumDescriptorProtoSchema,
   FieldDescriptorProto,
-  FieldDescriptorProtoSchema,
   FieldDescriptorProto_Type,
+  FieldDescriptorProtoSchema,
   FieldOptionsSchema,
 } from "@bufbuild/protobuf/wkt";
 import { ConstraintSchema } from "./buf/validate/expression_pb.js";
-import { FieldConstraintsSchema, field as bufField } from "./buf/validate/validate_pb.js";
+import { field as bufField, FieldConstraintsSchema } from "./buf/validate/validate_pb.js";
 import { getPackageName } from "./driver.js";
 import { field as statelyField } from "./extensions_pb.js";
 import {
@@ -34,32 +34,43 @@ import {
   UInt64OptionsSchema,
 } from "./options_pb.js";
 import { Deferred, resolveDeferred } from "./type-util.js";
-import { SchemaType, isItemType, resolveType } from "./types.js";
+import { isItemType, resolveType, SchemaType } from "./types.js";
 
 export interface FieldFromMetadata {
   /**
    * Derive the field's value from StatelyDB metadata. These are special values
    * that StatelyDB keeps track of for each item, but you must map them to
-   * fields in the schema to use them. This implicitly makes the field
-   * read-only. Any value set for this field will be ignored when the item is
-   * written.
+   * fields in the schema to use them.
    *
    * - `createdAtTime` and `lastModifiedAtTime` must only be set on a field that
    *   has a timestamp type (`timestampSeconds`, `timestampMilliseconds`, or
    *   `timestampMicroseconds`). These represent the time the database first
    *   created or last modified the item.
+   *   These fields are read-only, any value seton one of these fields will be ignored
+   *   when the item is written, unless the 'overwriteMetadataTimestamps' flag is set during
+   *   the put operation.
    * - `createdAtVersion` and `lastModifiedAtVersion` must only be set on a
    *   field that has a `uint` type. These represent a monotonically increasing
    *   version number within a Group that tracks modifications of items and can
    *   be used to strictly order changes. Note that multiple items can have the
    *   same createdAt/lastModifiedAtVersion if they were created/modified in the
    *   same transaction, since they logically were modified at the same time.
+   *   Both fields are read-only; any value set on one of these fields will be ignored
+   *   when the item is written.
+   *  - `ttl` must only be set on a field that has a timestamp type (`timestampSeconds`,
+   *  `timestampMilliseconds`, or `timestampMicroseconds`). However, `timestampSeconds` is
+   *  recommended as the other timestamp types will lose precision on a round-trip.
+   *  When a non-zero value is provided on a TTL field during a Put, the item will be automatically
+   *  deleted after the provided time has passed. The value must be a timestamp in the future,
+   *  or an error will be returned. On a read, the value will be populated with a timestamp if
+   *  the item has a TTL set on it. If no TTL is set, the field will be zero.
    */
   fromMetadata?:
     | "createdAtTime"
     | "lastModifiedAtTime"
     | "createdAtVersion"
-    | "lastModifiedAtVersion";
+    | "lastModifiedAtVersion"
+    | "ttl";
 }
 
 export interface FieldInitialValue {
@@ -126,6 +137,7 @@ const fromMetadataConvert: Record<NonNullable<FieldFromMetadata["fromMetadata"]>
   lastModifiedAtTime: FromMetadata.LAST_MODIFIED_AT_TIME,
   createdAtVersion: FromMetadata.CREATED_AT_VERSION,
   lastModifiedAtVersion: FromMetadata.LAST_MODIFIED_AT_VERSION,
+  ttl: FromMetadata.TTL,
 };
 
 const fromInitialValue: Record<NonNullable<FieldInitialValue["initialValue"]>, InitialValue> = {

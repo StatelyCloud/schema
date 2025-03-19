@@ -6,11 +6,11 @@ import process from "node:process";
 import { tsImport } from "tsx/esm/api";
 import ts from "typescript";
 import { buildSourceCodeInfo, extractCommentBindings } from "./comments.js";
+import { DSLResponse, DSLResponseSchema } from "./dsl/cli_pb.js";
 import { SchemaError } from "./errors.js";
 import { StatelyErrorDetails, StatelyErrorDetailsSchema } from "./errors/error_details_pb.js";
 import { file } from "./file.js";
 import { DeferredMigration } from "./migrate.js";
-import { DSLResponse, DSLResponseSchema } from "./schemaservice/cli_pb.js";
 import { Deferred, Plural } from "./type-util.js";
 import { type SchemaType } from "./types.js";
 
