@@ -1,6 +1,6 @@
 {
   "name": "@stately-cloud/schema",
-  "version": "0.23.0",
+  "version": "0.24.0",
   "engines": {
     "node": ">=18.20"
   },
@@ -38,7 +38,8 @@
     "lint:prettier": "prettier 'src/**/*.ts'",
     "lint": "eslint 'src/**/*.ts'",
     "fix:eslint": "eslint --fix 'src/**/*.ts'",
-    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest"
+    "pretest": "tsc -p tsconfig.json",
+    "test": "node --test --enable-source-maps"
   },
   "license": "Apache-2.0",
   "devDependencies": {

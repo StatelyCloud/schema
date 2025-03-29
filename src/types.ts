@@ -1,55 +1,132 @@
-import { getExtension, hasExtension, isMessage } from "@bufbuild/protobuf";
-import {
-  DescriptorProto,
-  DescriptorProtoSchema,
-  EnumDescriptorProto,
-  FieldDescriptorProto_Label,
-  FieldDescriptorProto_Type,
-} from "@bufbuild/protobuf/wkt";
+import { EnumType } from "./enum.js";
 import { SchemaError } from "./errors.js";
-import { message } from "./extensions_pb.js";
+import { ItemType, ObjectType } from "./item-types.js";
 import { getRegisteredType, registerType } from "./type-registry.js";
-import { Deferred, resolveDeferred } from "./type-util.js";
+import { Deferred, Plural, resolveDeferred, resolvePlural } from "./type-util.js";
 
 /**
- * SchemaType specifies a reusable type that can be used in the Stately schema
- * system. This could be a "top level" item type, or a type that is referenced
- * from within other item or object types. `itemType`, `objectType`, `enumType`,
- * and `type` can be used to make new types, or you can use existing types such
- * as `string`, `uuid`, etc. These types carry validation information as well,
- * to reduce duplication.
+ * @generated from enum google.protobuf.FieldDescriptorProto.Type and then copied/modified here.
  */
-export interface SchemaType {
+export enum ProtoScalarType {
   /**
-   * A human-readable name for the type. This is used when printing errors or
-   * debugging the type, and when generating code for the type.
+   * 0 is reserved for errors.
+   * Order is weird for historical reasons.
+   *
+   * @generated from enum value: TYPE_DOUBLE = 1;
    */
+  DOUBLE = 1,
+  /**
+   * @generated from enum value: TYPE_FLOAT = 2;
+   */
+  FLOAT = 2,
+  /**
+   * Not ZigZag encoded.  Negative numbers take 10 bytes.  Use TYPE_SINT64 if
+   * negative values are likely.
+   *
+   * @generated from enum value: TYPE_INT64 = 3;
+   */
+  INT64 = 3,
+  /**
+   * @generated from enum value: TYPE_UINT64 = 4;
+   */
+  UINT64 = 4,
+  /**
+   * Not ZigZag encoded.  Negative numbers take 10 bytes.  Use TYPE_SINT32 if
+   * negative values are likely.
+   *
+   * @generated from enum value: TYPE_INT32 = 5;
+   */
+  INT32 = 5,
+  /**
+   * @generated from enum value: TYPE_FIXED64 = 6;
+   */
+  FIXED64 = 6,
+  /**
+   * @generated from enum value: TYPE_FIXED32 = 7;
+   */
+  FIXED32 = 7,
+  /**
+   * @generated from enum value: TYPE_BOOL = 8;
+   */
+  BOOL = 8,
+  /**
+   * @generated from enum value: TYPE_STRING = 9;
+   */
+  STRING = 9,
+  /**
+   * New in version 2.
+   *
+   * @generated from enum value: TYPE_BYTES = 12;
+   */
+  BYTES = 12,
+  /**
+   * @generated from enum value: TYPE_UINT32 = 13;
+   */
+  UINT32 = 13,
+  /**
+   * @generated from enum value: TYPE_ENUM = 14;
+   */
+  ENUM = 14,
+  /**
+   * @generated from enum value: TYPE_SFIXED32 = 15;
+   */
+  SFIXED32 = 15,
+  /**
+   * @generated from enum value: TYPE_SFIXED64 = 16;
+   */
+  SFIXED64 = 16,
+  /**
+   * Uses ZigZag encoding.
+   *
+   * @generated from enum value: TYPE_SINT32 = 17;
+   */
+  SINT32 = 17,
+  /**
+   * Uses ZigZag encoding.
+   *
+   * @generated from enum value: TYPE_SINT64 = 18;
+   */
+  SINT64 = 18,
+}
+
+export interface Validation {
+  /**
+   * A CEL (Common Expression Language) expression that will be used to validate
+   * this type. If data of this type does not pass the validation expression, it
+   * will be rejected.
+   * @see https://github.com/bufbuild/protovalidate/blob/main/docs/cel.md
+   * @example
+   * export const Name = type("name", string, { valid: "size(this) >= 1" });
+   */
+  valid: string;
+  /**
+   * A human-readable message that will be returned if the validation fails.
+   */
+  message: string;
+}
+
+export type Validations = Plural<string | Validation>;
+
+export interface TypeAlias {
+  type: "alias";
+
   name: string;
   /**
    * The type this type is based on. This can either be an underlying protobuf
    * scalar type, or another Stately SchemaType, or a basic protobuf message or
    * enum type.
    */
-  parentType: FieldDescriptorProto_Type | SchemaType | EnumDescriptorProto | DescriptorProto;
-
+  parentType: ProtoScalarType | SchemaType;
   /**
    * Is this an array type? If true, the type is an array of the parent type.
    */
   array?: boolean;
 
   /**
-   * The default value for this type. This is returned on read when a field is
-   * not set. This value won't actually be saved into the database. If this
-   * isn't specified, the default is the "zero value" for the type - null for
-   * messages, zero for numbers and enums, false for booleans, and empty for
-   * arrays, strings and byte arrays. A required field cannot be the zero value.
+   * Whether this type as a whole is deprecated, and why. This will be marked in
+   * generated code.
    */
-  readDefault?: unknown;
-
-  /**
-   * Whether this type as a whole is deprecated. This can affect generated code.
-   */
-  deprecated?: boolean;
+  deprecated?: string;
 
   /**
    * Options for reinterpreting scalar types. This is used to influence how code
@@ -74,8 +151,39 @@ export interface SchemaType {
    * @example
    * export const Name = type("name", string, { valid: "size(this) >= 1" });
    */
-  valid?: string;
+  valid?: Validations;
+
+  /**
+   * Documentation for this type. In general you can use JSDoc comments above
+   * this value instead of filling out this field, but since those comments are
+   * extracted via static analysis, you may need to put them here if you're
+   * generating types dynamically.
+   */
+  comments?: string;
+
+  /**
+   * By default, the type() function will create a type alias, which can be used
+   * in generated code to provide a more human-readable name for a type. Setting
+   * this option to true will not create an alias, so the type used will be the
+   * parent type.
+   */
+  noAlias?: boolean;
 }
+
+/**
+ * SchemaType specifies a reusable type that can be used in the Stately schema
+ * system. This could be a "top level" item type, or a type that is referenced
+ * from within other item or object types. `itemType`, `objectType`, `enumType`,
+ * and `type` can be used to make new types, or you can use existing types such
+ * as `string`, `uuid`, etc. These types carry validation information as well,
+ * to reduce duplication.
+ */
+export type SchemaType = ItemType | ObjectType | EnumType | TypeAlias;
+
+/**
+ * The configuration arguments for the type function.
+ */
+export type TypeAliasConfig = Omit<TypeAlias, "type" | "parentType" | "array" | "name">;
 
 /**
  * type creates a new SchemaType based on the given parent type and options,
@@ -90,18 +198,19 @@ export interface SchemaType {
  */
 export function type(
   name: string,
-  parentType: SchemaType["parentType"],
-  config: Omit<SchemaType, "parentType" | "array" | "name"> = {},
+  parentType: SchemaType | ProtoScalarType,
+  config: TypeAliasConfig = {},
 ): SchemaType {
   const fullConfig = { ...config, parentType };
   const cached = getRegisteredType(name, "type", fullConfig);
   if (cached) {
     return cached;
   }
-  const schema: SchemaType = {
+  const schema: TypeAlias = {
     ...config,
     parentType,
     name,
+    type: "alias",
   };
   return registerType("type", schema, fullConfig);
 }
@@ -111,183 +220,34 @@ export function type(
  * parent type may also be a function that
  * returns a SchemaType, to allow for circular references.
  */
-export function arrayOf(type: Deferred<SchemaType>): Deferred<SchemaType> {
+export function arrayOf(type: Deferred<SchemaType>): Deferred<TypeAlias> {
   return () => {
     const resolvedType = resolveDeferred(type);
-    if (resolvedType.array) {
+    if (resolvedType.type === "alias" && resolvedType.array) {
       throw new SchemaError(
         "SchemaNestedArrays",
         `${resolvedType.name} is already an array, and nested arrays are not supported. Consider making a wrapper type with 'objectType'.`,
       );
     }
-
-    // omit validation rules from the array type, since we want them to apply to
-    // each element, not the array itself.
-    // TODO: find a way to apply these validation rules to each element.
-    // https://app.clickup.com/t/8689jnfzt
-    const { valid, ...propagatedProperties } = resolvedType;
     return {
-      ...propagatedProperties,
+      parentType: resolvedType,
       name: `${resolvedType.name}[]`,
       array: true,
+      type: "alias",
+      noAlias: true,
     };
   };
 }
 
-/**
- * mapOf creates a new SchemaType that is an map with keys and values of the
- * given types.
- */
-// TODO: implement this
-// export function mapOf(keyType: Deferred<SchemaType>, valueType: Deferred<SchemaType>) {
-//   const resolvedKeyType = resolveDeferred(keyType);
-//   const resolvedValueType = resolveDeferred(valueType);
-
-//   return {
-//     name: `map<${resolvedKeyType.name}, ${resolvedValueType.name}>`,
-//     parentType: resolvedKeyType,
-//     map: resolvedValueType,
-//   };
-// }
-
-/*
- * Stately's "well known types" which expose some basic protobuf types plus our
- * own extensions. We intentionally don't expose all protobuf types for now -
- * instead we expose a useful subset.
- */
-
-/** A boolean (true/false) value. The default is false. */
-export const bool = type("bool", FieldDescriptorProto_Type.BOOL);
-/** A UTF-8 string. The default is an empty string. */
-export const string = type("string", FieldDescriptorProto_Type.STRING);
-/** A 64-bit signed integer. The default is 0. */
-export const int = type("int", FieldDescriptorProto_Type.SINT64);
-/** A 64-bit unsigned integer. The default is 0. */
-export const uint = type("uint", FieldDescriptorProto_Type.UINT64);
-/**
- * A 32-bit signed integer. The default is 0. This may be preferable to an int
- * when targeting JavaScript, since it can be represented as a number instead of
- * a BigInt.
- */
-export const int32 = type("int32", FieldDescriptorProto_Type.SINT32);
-/**
- * A 32-bit unsigned integer. The default is 0. This may be preferable to a uint
- * when targeting JavaScript, since it can be represented as a number instead of
- * a BigInt.
- */
-export const uint32 = type("uint32", FieldDescriptorProto_Type.UINT32);
-/** A 64-bit floating-point number. The default is 0.0. */
-export const double = type("double", FieldDescriptorProto_Type.DOUBLE);
-// export const jsint = type("jsint", FieldDescriptorProto_Type.SINT64, {
-//   // Ensure that the value is between Number.MAX_SAFE_INTEGER and Number.MIN_SAFE_INTEGER.
-//   valid: "this < 9007199254740991 && this > -9007199254740991",
-// });
-// export const jsuint = type("jsuint", FieldDescriptorProto_Type.UINT64, {
-//   // Ensure that the value is between Number.MAX_SAFE_INTEGER and Number.MIN_SAFE_INTEGER.
-//   valid: "this < 9007199254740991",
-// });
-/** A byte array. The default is an empty array. */
-export const bytes = type("byte[]", FieldDescriptorProto_Type.BYTES);
-
-/** A 128-bit UUID. The default is null. */
-export const uuid = type("uuid", bytes, {
-  interpretAs: "uuid",
-  valid: "size(this) == 0 || size(this) == 16",
-});
-
-/**
- * A URL. The url may be relative (a path, without a host) or absolute (starting
- * with a scheme). Setting an invalid URL will cause the field to be invalid.
- *
- * Right now, URLs are treated as strings, but in the future, generated SDKs
- * will use the platform's preferred URL type, and you'll be able to use
- * URL-specific methods and properties in validations.
- */
-export const url = type("url", string, {
-  interpretAs: "url",
-  // valid: "this.scheme == 'https' && this.domain == 'gist.github.com'",
-});
-
-/**
- * A Stately key path. This is a string that represents a path to an item in the
- * database. The key path will be validated to ensure it is well-formed.
- */
-export const keyPath = type("keyPath", string, {
-  interpretAs: "keyPath",
-});
-
-/* Timestamps */
-
-/** A timestamp with second resolution since the Unix epoch. The default is Jan 1, 1970. */
-export const timestampSeconds = type("timestampSeconds", int, { interpretAs: "timestampSeconds" });
-/** A timestamp with millisecond resolution since the Unix epoch. The default is Jan 1, 1970. */
-export const timestampMilliseconds = type("timestampMilliseconds", int, {
-  interpretAs: "timestampMilliseconds",
-});
-/** A timestamp with microsecond resolution since the Unix epoch. The default is Jan 1, 1970. */
-export const timestampMicroseconds = type("timestampMicroseconds", int, {
-  interpretAs: "timestampMicroseconds",
-});
-/**
- * A microsecond resolution timestamp suitable for recording times after 1970.
- * It cannot represent times before 1970. The default is Jan 1, 1970.
- */
-export const currentTimestampMicroseconds = type("futureTimestampMicroseconds", uint, {
-  interpretAs: "timestampMicroseconds",
-});
-
-/* Durations */
-
-/** An duration in time with seconds resolution. The default is 0s. */
-export const durationSeconds = type("durationSeconds", int, { interpretAs: "durationSeconds" });
-/** An duration in time with milliseconds resolution. The default is 0s. */
-export const durationMilliseconds = type("durationMilliseconds", int, {
-  interpretAs: "durationMilliseconds",
-});
-
-/**
- * A pointer to another item type. This allows you to reference another item
- * elsewhere in the database by its key path.
- */
-// export function pointerTo(dest: Deferred<SchemaType>): Deferred<SchemaType> {
-//   return () => {
-//     const descriptor = resolveDeferred(dest);
-//     if (descriptor.array) {
-//       throw new Error("Pointers cannot point to arrays.");
-//     }
-//     if (!isItemType(descriptor)) {
-//       throw new Error("Pointers can only point to item types.");
-//     }
-
-//     // TODO: Pointers could actually be the minimal set of IDs required to
-//     // *build* a key path for that item. In that case we'd really store a
-//     // message with the type of the target item, and a special option that says
-//     // "this is a pointer to that item".
-//     // TODO: Right now these are indistinguishable from arbitrary key paths.
-//     // We'd need a new option that explains what type this points to.
-//     return type(`*${descriptor.name}`, string, {
-//       interpretAs: "keyPath",
-//     });
-//   };
-// }
-
-/**
- * A helper to determine if a type is an item type.
- */
-export function isItemType(type: SchemaType): boolean {
-  const { underlyingType } = resolveType(type);
-  if (!isMessage(underlyingType, DescriptorProtoSchema)) {
-    return false;
-  }
-
-  // Item types must have a key path.
-  if (underlyingType.options && hasExtension(underlyingType.options, message)) {
-    const statelyOptions = getExtension(underlyingType.options, message);
-    if (statelyOptions.keyPaths.length > 0) {
-      return true;
-    }
-  }
-  return false;
+export interface TypeInfo {
+  underlyingType: Exclude<TypeAlias["parentType"], TypeAlias>;
+  repeated: boolean;
+  /**
+   * CEL expressions that should all be used to validate this type. These are
+   * cumulative.
+   */
+  validations: Validation[];
+  interpretAs?: TypeAlias["interpretAs"];
 }
 
 /**
@@ -296,34 +256,26 @@ export function isItemType(type: SchemaType): boolean {
  * function resolves all of that.
  * @private this is used in various places.
  */
-export function resolveType(type: SchemaType): {
-  underlyingType: Exclude<SchemaType["parentType"], SchemaType>;
-  /**
-   * The label for this field, e.g. if it is a repeated field.
-   */
-  label: FieldDescriptorProto_Label;
-  /**
-   * CEL expressions that should all be used to validate this type. These are
-   * cumulative.
-   */
-  validations: string[];
-  interpretAs?: SchemaType["interpretAs"];
-  readDefault?: SchemaType["readDefault"];
-} {
-  const validations: string[] = [];
+export function resolveType(type: SchemaType): TypeInfo {
+  const validations: Validation[] = [];
 
-  let underlyingType: Exclude<SchemaType["parentType"], SchemaType> | undefined;
-  let label: FieldDescriptorProto_Label | undefined;
-  let interpretAs: SchemaType["interpretAs"] | undefined;
-  let readDefault: SchemaType["readDefault"] | undefined;
+  let underlyingType: Exclude<TypeAlias["parentType"], TypeAlias> | undefined;
+  let repeated = false;
+  let interpretAs: TypeAlias["interpretAs"] | undefined;
+
+  if (type.type !== "alias") {
+    return {
+      underlyingType: type,
+      repeated: false,
+      validations,
+    };
+  }
 
   // Iterate through a chain of types to determine the set of resolved options.
-  let currentType: SchemaType = type;
+  let currentType: TypeAlias = type;
   outer: while (currentType) {
     // Once it's set to repeated, it stays that way.
-    if (label === undefined && currentType.array) {
-      label = FieldDescriptorProto_Label.REPEATED;
-    }
+    repeated ||= Boolean(currentType.array);
 
     // Only take the "topmost" interpretAs value.
     if (!interpretAs && currentType.interpretAs) {
@@ -332,12 +284,11 @@ export function resolveType(type: SchemaType): {
 
     // Accumulate all validations.
     if (currentType.valid) {
-      validations.push(currentType.valid);
-    }
-
-    // Only take the "topmost" default value.
-    if (readDefault === undefined && currentType.readDefault !== undefined) {
-      readDefault = currentType.readDefault;
+      validations.push(
+        ...resolvePlural(currentType.valid).map((v) =>
+          typeof v === "string" ? { valid: v, message: "" } : v,
+        ),
+      );
     }
 
     const parentType = currentType.parentType;
@@ -361,12 +312,43 @@ export function resolveType(type: SchemaType): {
     throw new SchemaError("SchemaUnknownType", `No field type or type name found for ${type.name}`);
   }
 
+  // For repeated types, we need to validate each element in the list using the
+  // type's validations, instead of validating the array as a whole.
+  if (repeated) {
+    for (const v of validations) {
+      v.valid = `this.all(v, ${v.valid.replace(/this/g, "v")})`;
+    }
+  }
+
   return {
     underlyingType,
-    // Default to optional if no label is set like protoc.
-    label: label ?? FieldDescriptorProto_Label.OPTIONAL,
+    repeated,
     validations,
     interpretAs,
-    readDefault,
   };
+}
+
+/**
+ * deprecated transforms a type into a deprecated version of itself. This can be
+ * used to mark a type as deprecated, or to mark a specific value as deprecated.
+ * @param config The type to deprecate
+ * @example
+ * export const GameType = enumType("GameType", {
+ *  Magic: 1,
+ *  Lorcana: 2,
+ *  StarWarsDestiny: deprecated(3, "No longer sold as of 2020"),
+ * });
+ */
+export function deprecated<T extends { deprecated?: string } | number>(
+  config: T,
+  deprecatedReason: string,
+): T {
+  if (typeof config === "number") {
+    // Maybe not...
+    return { deprecated: deprecatedReason, value: config } as unknown as T;
+  } else if (typeof config === "object") {
+    return { ...config, deprecated: deprecatedReason };
+  } else {
+    throw new SchemaError("InvalidArgument", `Invalid argument passed to deprecated`);
+  }
 }

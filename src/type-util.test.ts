@@ -1,21 +1,26 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { resolveDeferred, resolvePlural } from "./type-util.js";
 
 describe("resolvePlural", () => {
   it("handles singular", () => {
-    expect(resolvePlural(1)).toEqual([1]);
+    assert.deepEqual(resolvePlural(1), [1]);
   });
 
   it("handles plural", () => {
-    expect(resolvePlural([1])).toEqual([1]);
+    assert.deepEqual(resolvePlural([1]), [1]);
   });
 });
 
 describe("resolveDeferred", () => {
   it("handles normal object", () => {
-    expect(resolveDeferred({ foo: 1 })).toEqual({ foo: 1 });
+    assert.deepEqual(resolveDeferred({ foo: 1 }), { foo: 1 });
   });
 
   it("handles function", () => {
-    expect(resolveDeferred(() => ({ foo: 1 }))).toEqual({ foo: 1 });
+    assert.deepEqual(
+      resolveDeferred(() => ({ foo: 1 })),
+      { foo: 1 },
+    );
   });
 });

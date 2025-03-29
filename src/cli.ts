@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { build } from "./driver.js";
 
+// The entry point for the CLI, exposed as the "schema" command.
 try {
   const [
     _nodePath,

@@ -1,7 +1,7 @@
 import { deepEqual } from "fast-equals";
-import { EnumConfig } from "./enum.js";
+import { EnumConfig, EnumValue } from "./enum.js";
 import { Fields, ItemTypeConfig, ObjectTypeConfig } from "./item-types.js";
-import { SchemaType } from "./types.js";
+import { SchemaType, TypeAlias, TypeAliasConfig } from "./types.js";
 
 export class TypeDefinitionError extends Error {
   constructor(message: string) {
@@ -15,12 +15,12 @@ type TypeConfig =
   | { type: "objectType"; config: ObjectTypeConfig }
   | {
       type: "enumType";
-      config: { values: { [name: string]: number }; config: EnumConfig };
+      config: { values: { [name: string]: number | EnumValue }; config: EnumConfig };
     }
   | {
       type: "type";
-      config: Omit<SchemaType, "parentType" | "array" | "name"> & {
-        parentType: SchemaType["parentType"];
+      config: TypeAliasConfig & {
+        parentType: TypeAlias["parentType"];
       };
     };
 
@@ -39,6 +39,7 @@ type TypeConfig =
  *    has one value in memory. This allows for neat things like comparing types
  *    by reference instead of by value.
  */
+// TODO: expose the registry so the driver can just read it... somehow? Maybe by creating a special wrapper file first that imports the user's schema and the registry?
 const registry = new Map<string, { schema: SchemaType; config: TypeConfig }>();
 
 type TypeConfigOfType<T, K extends TypeConfig["type"]> = T extends {
@@ -124,8 +125,7 @@ function configsEqual(a: TypeConfig, b: TypeConfig) {
       return (
         a.config.parentType === b.config.parentType &&
         a.config.interpretAs === b.config.interpretAs &&
-        a.config.valid === b.config.valid &&
-        deepEqual(a.config.readDefault, b.config.readDefault)
+        a.config.valid === b.config.valid
       );
   }
 }

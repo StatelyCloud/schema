@@ -1,39 +1,72 @@
-import { create } from "@bufbuild/protobuf";
-import {
-  EnumDescriptorProtoSchema,
-  EnumValueDescriptorProto,
-  EnumValueDescriptorProtoSchema,
-} from "@bufbuild/protobuf/wkt";
 import { getRegisteredType, registerType } from "./type-registry.js";
-import { SchemaType } from "./types.js";
-import { validateName } from "./validate.js";
 
-/** Options for defining an enum. Used in {@link enumType}. */
-export interface EnumConfig {
+export interface EnumValue {
   /**
-   * Whether this enum as a whole is deprecated. This will be marked in
+   * The numeric enum value. This is the value that will be stored in the
+   * database, and should be unique within the enum.
+   */
+  value: number; // TODO: Support string-valued enums?
+  /**
+   * Documentation for this value. In general you can use JSDoc comments above
+   * this value instead of filling out this field, but since those comments are
+   * extracted via static analysis, you may need to put them here if you're
+   * generating enums dynamically.
+   */
+  comments?: string;
+  /**
+   * Whether this enum value is deprecated, and why. This will be marked in
    * generated code.
    */
-  deprecated?: boolean;
-  /**
-   * Values that are deprecated. These will be individually marked in generated
-   * code.
-   */
-  deprecatedValues?: string[];
+  deprecated?: string;
 }
+
+// High level representation of an enum type.
+export interface EnumType<V extends string = string> {
+  type: "enum";
+
+  /**
+   * The name of the type. This is used in generated code and should be unique
+   * within a schema.
+   */
+  name: string;
+  /**
+   * Values is a map from the short name of the value to its ordinal (and optional comments/configs). The
+   */
+  values: {
+    [shortName in V]: EnumValue;
+  };
+
+  /**
+   * Documentation for this enum. In general you can use JSDoc comments above
+   * this value instead of filling out this field, but since those comments are
+   * extracted via static analysis, you may need to put them here if you're
+   * generating enums dynamically.
+   */
+  comments?: string;
+
+  /**
+   * Whether this enum as a whole is deprecated, and why. This will be marked in
+   * generated code.
+   */
+  deprecated?: string;
+}
+
+export type EnumConfig = Omit<EnumType, "type" | "values" | "name">;
 
 /**
  * Creates a new enum type. An enum can be one of several defined values.
  * @param name The name of the enum type, which will be used in generated code.
- * @param values The possible values of the enum. Each one is a string, although
- * the stored value will be a number. The order of these matters.
+ * @param values The possible values of the enum. Each key is a string, and the
+ * value is a number. Optionally, you can specify the value, a deprecated flag,
+ * and comments for each value.
  * @param config Extra configuration options for the enum.
  * @returns A new enum type that can be used when defining fields.
  * @example
  * export const Rank = enumType("Rank", {
  *   Beginner: 0, // This is the default value, but also the zero value
- *   Intermediate: 1,
+ *   Intermediate: { value: 1, deprecated: true },
  *   Expert: 2,
+ *   Enlightened: deprecated(3, "Nobody ever achieved this rank"),
  * });
  * export const Player = itemType("Player", {
  *   fields: {
@@ -46,78 +79,39 @@ export interface EnumConfig {
  *   },
  * });
  */
-export function enumType(
+export function enumType<V extends string>(
   name: string,
-  values: { [name: string]: number },
+  values: { [name in V]: number | EnumValue },
   config: EnumConfig = {},
-) {
-  if (!validateName(name)) {
-    throw new Error(
-      `Invalid name for enum: ${name}. Names must consist of letters, numbers, and underscore.`,
-    );
-  }
-
+): EnumType<V> {
   const fullEnumConfig = { values, config };
   const cached = getRegisteredType(name, "enumType", fullEnumConfig);
   if (cached) {
-    return cached;
+    return cached as EnumType<V>;
   }
 
-  const enumValues: EnumValueDescriptorProto[] = [];
-
-  // eslint-disable-next-line prefer-const
-  for (let [valueName, valueNum] of Object.entries(values)) {
-    if (!validateName(valueName)) {
-      throw new Error(
-        `Invalid name for enum value ${name}.${valueName}. Names must consist of letters, numbers, and underscore.`,
-      );
+  const enumValues: EnumType<V>["values"] = {} as EnumType<V>["values"];
+  for (const [valueName, valueNum] of Object.entries<
+    // TODO: I don't understand why we need to specify the type here
+    number | EnumValue
+  >(values)) {
+    let val: EnumValue;
+    if (typeof valueNum === "number") {
+      val = {
+        value: valueNum,
+      };
+    } else {
+      val = valueNum;
     }
-    // Note that enum values are a sibling to the enum parent in the proto
-    // namespace - they must be globally unique. We follow the
-    // https://buf.build/docs/lint/rules/#enum_value_prefix rule and prefix all
-    // enum values with the enum name. This produces some awkward names in
-    // generated code, which we should fix in our own codegen.
-    enumValues.push(
-      create(EnumValueDescriptorProtoSchema, {
-        name: enumValueName(name, valueName),
-        number: valueNum,
-        options: config.deprecatedValues?.includes(valueName)
-          ? {
-              deprecated: true,
-            }
-          : undefined,
-      }),
-    );
+    enumValues[valueName as V] = val;
   }
-
-  const hasZeroValue = enumValues.some((v) => v.number === 0);
-
-  if (!hasZeroValue) {
-    enumValues.unshift(
-      create(EnumValueDescriptorProtoSchema, {
-        name: enumValueName(name, "UNSPECIFIED"),
-        number: 0,
-      }),
-    );
-  }
-
-  const enumDescriptor = create(EnumDescriptorProtoSchema, {
-    name: name,
-    value: enumValues,
-    options: config.deprecated ? { deprecated: true } : undefined,
-  });
-
-  const schema: SchemaType = {
+  const schemaType: EnumType<V> = {
+    type: "enum",
     name,
-    parentType: enumDescriptor,
+    values: enumValues,
+    comments: config.comments,
     deprecated: config.deprecated,
   };
-
-  return registerType("enumType", schema, fullEnumConfig);
+  registerType("enumType", schemaType, fullEnumConfig);
+  return schemaType;
 }
-
-export function enumValueName(enumName: string, valueName: string) {
-  return `${enumName}_${valueName}`;
-}
-
-// TODO: Implement flagsType, which is like an enum but the values are flags in a bitfield

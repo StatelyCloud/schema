@@ -1,6 +1,4 @@
 import { create } from "@bufbuild/protobuf";
-import { getPackageName } from "./driver.js";
-import { stringifyDefault } from "./fields.js";
 import {
   MigrateActionSchema,
   Migration,
@@ -8,6 +6,9 @@ import {
   MigrationCommandSchema,
   MigrationSchema,
 } from "./migration_pb.js";
+import { stringifyDefault } from "./stringify.js";
+
+// TODO: Pass types into these functions, use that to check the types of the arguments.
 
 /**
  * A type migrator is used to declare changes within a type (item or object)
@@ -19,9 +20,8 @@ class TypeMigrator {
    * @private
    */
   constructor(name: string, migration: Migration) {
-    const typeName = `${getPackageName()}.${name}`;
     this.command = create(MigrationCommandSchema, {
-      typeName,
+      typeName: name,
     });
     migration.commands.push(this.command);
   }
@@ -179,9 +179,8 @@ class EnumTypeMigrator {
    */
   // eslint-disable-next-line sonarjs/no-identical-functions
   constructor(name: string, migration: Migration) {
-    const typeName = `${getPackageName()}.${name}`;
     this.command = create(MigrationCommandSchema, {
-      typeName,
+      typeName: name,
     });
     migration.commands.push(this.command);
   }
@@ -303,7 +302,7 @@ class Migrator {
   removeType(name: string) {
     this.migration.commands.push(
       create(MigrationCommandSchema, {
-        typeName: `${getPackageName()}.${name}`,
+        typeName: name,
         actions: [
           {
             action: {
@@ -323,7 +322,7 @@ class Migrator {
   addType(name: string) {
     this.migration.commands.push(
       create(MigrationCommandSchema, {
-        typeName: `${getPackageName()}.${name}`,
+        typeName: name,
         actions: [
           {
             action: {
@@ -344,13 +343,13 @@ class Migrator {
   renameType(oldName: string, newName: string) {
     this.migration.commands.push(
       create(MigrationCommandSchema, {
-        typeName: `${getPackageName()}.${oldName}`,
+        typeName: oldName,
         actions: [
           {
             action: {
               case: "renameType",
               value: {
-                newName: `${getPackageName()}.${newName}`,
+                newName: newName,
               },
             },
           },
@@ -391,20 +390,21 @@ export class DeferredMigration {
 
 // It's so tempting to try to use TypeScript to validate the type/field names
 // here, but we can't. Customers are encouraged to keep old migrations around as
-// a sort of "browseable history", and since we only have the types for the
+// a sort of "browse-able history", and since we only have the types for the
 // *current* schema, old migrations could never make sense. This is also why we
 // don't bother to validate any of the names here - we'll let the backend do
-// that since it has access to both the old and new schema versions, wheras in
+// that since it has access to both the old and new schema versions, whereas in
 // JS we only have the new schema.
 
 /**
  * Declare a migration from one schema version to the next. Changes to your
- * schema may require declaring migrations to provide clarity and context for
- * the changes that have occurred, such as disambiguating field renames from
- * field add+remove, or specifying options for what to do with existing data.
+ * schema require declaring migrations to provide clarity and context for the
+ * changes that have occurred, such as disambiguating field renames from field
+ * add+remove, or specifying options for what to do with existing data.
  *
- * Note: There is no "addType" method because new types are always added
- * to your schema automatically.
+ * @param name The name of the migration. This should be a short, descriptive
+ * name that describes the changes made in this migration. It will show up in
+ * your schema version history.
  *
  * @example
  * export const m4 = migrate(4, "Add movie_id to Role", (m) => {

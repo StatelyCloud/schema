@@ -1,12 +1,5 @@
-import { create } from "@bufbuild/protobuf";
-import {
-  FileDescriptorProto,
-  SourceCodeInfo,
-  SourceCodeInfo_LocationSchema,
-  SourceCodeInfoSchema,
-} from "@bufbuild/protobuf/wkt";
 import ts from "typescript";
-import { enumValueName } from "./enum.js";
+import { SchemaPackage } from "./package_pb.js";
 
 /** Associate a field with its JSDoc comment. */
 export interface FieldCommentBinding {
@@ -30,7 +23,7 @@ export interface CommentBinding {
    * The kind of type this is. This would be useful if we wanted to distinguish
    * two identically-named types, which I don't think can actually happen.
    */
-  type: "itemType" | "objectType" | "enumType";
+  type: "itemType" | "objectType" | "enumType" | "alias";
   /**
    * The name of the type (e.g. "Person" for `itemType("Person", { ... })`).
    */
@@ -143,7 +136,7 @@ function processFunctionDeclaration(
   if (callInfo) {
     const jsDoc = extractJSDoc(node);
     if (jsDoc) {
-      callInfo.comment = jsDoc + (callInfo.comment ? `\n\n${callInfo.comment}` : "");
+      callInfo.comment = appendComment(callInfo.comment, jsDoc);
     }
     return callInfo;
   }
@@ -238,7 +231,7 @@ export function extractCommentBindings(program: ts.Program): Record<string, Comm
         if (info) {
           const jsDoc = extractJSDoc(node);
           if (jsDoc) {
-            info.comment = jsDoc + (info.comment ? `\n\n${info.comment}` : "");
+            info.comment = appendComment(info.comment, jsDoc);
           }
           commentBindings[info.name] = info;
         }
@@ -263,89 +256,58 @@ export function extractCommentBindings(program: ts.Program): Record<string, Comm
 }
 
 /**
- * Build a proto declaration SourceCodeInfo message from the comment bindings.
- * This is used to associate comments with specific fields in the
- * FileDescriptorProto. See
- * https://protobuf.com/docs/descriptors#source-code-info and
- * https://github.com/protocolbuffers/protobuf/blob/v27.0/src/google/protobuf/descriptor.proto#L1132-L1202
- * for more info on how SourceCodeInfo works.
+ * Add comments from comment bindings to the schema package. Mutates the package
+ * in place.
  */
 export function buildSourceCodeInfo(
-  fd: FileDescriptorProto,
+  pkg: SchemaPackage,
   commentBindings: Record<string, CommentBinding>,
-): SourceCodeInfo | undefined {
-  // A dummy value, but span is required by protoc plugins. We don't need to map
-  // back to source code until we want to associate fields with source code
-  // locations (e.g. for error messages), but even then it'd be more complicated
-  // than just filling these out because we don't have separate file mappings.
-  const span = [0, 0, 0];
+) {
+  for (const message of pkg.messages) {
+    const commentBinding = commentBindings[message.typeName];
+    if (!commentBinding || commentBinding.type === "enumType") {
+      continue;
+    }
+    if (commentBinding.comment) {
+      message.comments = appendComment(message.comments, commentBinding.comment);
+    }
+    for (const [name, binding] of Object.entries(commentBinding.fields)) {
+      const field = message.fields.find((f) => f.fieldName === name);
+      if (field && binding.comment) {
+        field.comments = appendComment(field.comments, binding.comment);
+      }
+    }
+  }
+  for (const enumType of pkg.enums) {
+    const commentBinding = commentBindings[enumType.typeName];
+    if (!commentBinding || commentBinding.type !== "enumType") {
+      continue;
+    }
+    if (commentBinding.comment) {
+      enumType.comments = appendComment(enumType.comments, commentBinding.comment);
+    }
+    for (const [name, binding] of Object.entries(commentBinding.fields)) {
+      const value = enumType.values.find((f) => f.shortName === name);
+      if (value && binding.comment) {
+        value.comments = appendComment(value.comments, binding.comment);
+      }
+    }
+  }
+  for (const typeAlias of pkg.typeAliases) {
+    const commentBinding = commentBindings[typeAlias.typeName];
+    if (!commentBinding || commentBinding.type !== "alias") {
+      continue;
+    }
+    if (commentBinding.comment) {
+      typeAlias.comments = appendComment(typeAlias.comments, commentBinding.comment);
+    }
+  }
+}
 
-  const s = create(SourceCodeInfoSchema, {});
-  for (let i = 0; i < fd.messageType.length; i++) {
-    const message = fd.messageType[i];
-    const commentBinding = commentBindings[message.name];
-    if (!commentBinding) {
-      continue;
-    }
-    if (commentBinding.comment) {
-      const location = create(SourceCodeInfo_LocationSchema, {
-        // Field number 4 is "message_type" in FileDescriptorProto. i is the
-        // index of this message in the message_type array.
-        path: [4, i],
-        span,
-        leadingComments: commentBinding.comment,
-      });
-      s.location.push(location);
-    }
-    for (const [name, binding] of Object.entries(commentBinding.fields)) {
-      const fieldIndex = message.field.findIndex((f) => f.name === name);
-      if (fieldIndex >= 0 && binding.comment) {
-        const location = create(SourceCodeInfo_LocationSchema, {
-          // Field number 4 is "message_type" in FileDescriptorProto. i is the
-          // index of this message in the message_type array. Field number 2 is
-          // "field" in DescriptorProto, and fieldIndex is the index of this
-          // field in the "field" array.
-          path: [4, i, 2, fieldIndex],
-          span,
-          leadingComments: binding.comment,
-        });
-        s.location.push(location);
-      }
-    }
+// This actually prepends the comment, but I wanted it to look like the Go "append" function.
+function appendComment(existing: string | undefined, newComment: string): string {
+  if (!existing) {
+    return newComment;
   }
-  for (let i = 0; i < fd.enumType.length; i++) {
-    const enumType = fd.enumType[i];
-    const commentBinding = commentBindings[enumType.name];
-    if (!commentBinding) {
-      continue;
-    }
-    if (commentBinding.comment) {
-      const location = create(SourceCodeInfo_LocationSchema, {
-        // Field number 5 is "enum_type" in FileDescriptorProto. i is the index
-        // of this enum in the enum_type array.
-        path: [5, i],
-        span,
-        leadingComments: commentBinding.comment,
-      });
-      s.location.push(location);
-    }
-    for (const [name, binding] of Object.entries(commentBinding.fields)) {
-      const valueIndex = enumType.value.findIndex(
-        (f) => f.name === enumValueName(enumType.name, name),
-      );
-      if (valueIndex >= 0 && binding.comment) {
-        const location = create(SourceCodeInfo_LocationSchema, {
-          // Field number 5 is "enum_type" in FileDescriptorProto. i is the
-          // index of this enum in the enum_type array. Field number 2 is
-          // "value" in EnumDescriptorProto, and valueIndex is the index of this
-          // value in the "value" array.
-          path: [5, i, 2, valueIndex],
-          span,
-          leadingComments: binding.comment,
-        });
-        s.location.push(location);
-      }
-    }
-  }
-  return s;
+  return `${newComment}\n\n${existing}`;
 }

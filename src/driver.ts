@@ -1,5 +1,4 @@
 import { create, toBinary } from "@bufbuild/protobuf";
-import { FileDescriptorProto } from "@bufbuild/protobuf/wkt";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -11,11 +10,9 @@ import { SchemaError } from "./errors.js";
 import { StatelyErrorDetails, StatelyErrorDetailsSchema } from "./errors/error_details_pb.js";
 import { file } from "./file.js";
 import { DeferredMigration } from "./migrate.js";
+import { SchemaPackage } from "./package_pb.js";
 import { Deferred, Plural } from "./type-util.js";
 import { type SchemaType } from "./types.js";
-
-// getPackageName returns the package name to use for the schema.
-export const getPackageName = () => process.env.PACKAGE || "stately.generated";
 
 /**
  * The build function is used by the CLI to build a binary DSLResponse file from
@@ -39,13 +36,8 @@ export async function build(
   // We need to be able to generate unique package names for each schema file so that
   // types do not collide in proto registries. (e.g. My app uses two different unrelated
   // schemas, cpschema, and testschema). To do this we will add the file name to the package
-  // we generate. However, the program we create below to parse the input schema
-  // essentially runs a disconnected version of the DSL i.e. variables cannot be shared
-  // between the current runtime and the program we create below. Thus, when types are
-  // registered they will be registered with a default package name unless we have a way
-  // to communicate the package name to the program. Since we are still running in the same
-  // process, we can use an environment variable to do this.
-  process.env.PACKAGE = fileName ? `stately.generated.${fileName}` : "stately.generated";
+  // we generate.
+  const packageName = fileName ? `stately.generated.${fileName}` : "stately.generated";
   process.stderr.write(`Building schema from ${inputPath}\n`);
 
   // Use TypeScript to parse the input files.
@@ -69,13 +61,9 @@ export async function build(
   // Validate and type check the program
   const allDiagnostics = ts.getPreEmitDiagnostics(program);
 
+  // Emit typescript files to disk:
   // const emitResult = program.emit();
   // Could hook the result files and use them to add in-memory modules: https://nodejs.org/api/module.html#customization-hooks
-
-  // TODO: I guess we could walk the AST of the source files to find a mapping
-  // of JSDoc?? to types/fields, and use that to write a SourceCodeInfo section
-  // in the FileDescriptorProto (or do our own comment representation).
-  // https://joshuakgoldberg.github.io/ts-api-utils/stable/types/ForEachCommentCallback.html
 
   const errors: StatelyErrorDetails[] = [];
 
@@ -128,10 +116,10 @@ export async function build(
     }
   }
 
-  // Process into a FileDescriptorProto
-  let fd: FileDescriptorProto;
+  // Process into a SchemaPackage
+  let pkg: SchemaPackage;
   try {
-    fd = file(schemaTypes, fileName, getPackageName());
+    pkg = file(schemaTypes, fileName, packageName);
   } catch (e) {
     if (e instanceof SchemaError) {
       const output = create(DSLResponseSchema, {
@@ -148,7 +136,7 @@ export async function build(
   // from the TypeScript AST.
   try {
     const commentBindings = extractCommentBindings(program);
-    fd.sourceCodeInfo = buildSourceCodeInfo(fd, commentBindings);
+    buildSourceCodeInfo(pkg, commentBindings);
   } catch (e) {
     await respondWithError(
       e,
@@ -168,7 +156,7 @@ export async function build(
   const migrations = migrationsFromTargetVersions.map((migration) => migration.build());
 
   const output = create(DSLResponseSchema, {
-    fileDescriptor: fd,
+    package: pkg,
     migrations: migrations,
   });
   respond(output);

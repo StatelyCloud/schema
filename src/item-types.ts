@@ -1,25 +1,7 @@
-import { create, setExtension } from "@bufbuild/protobuf";
-import { message as messageExtension } from "./extensions_pb.js";
-import { Field, field } from "./fields.js";
-import {
-  MessageOptions_IndexSchema,
-  MessageOptions_KeyPathSchema,
-  MessageOptionsSchema as StatelyMessageOptionsSchema,
-  SupportedFeatures,
-  Ttl_TtlSource,
-  TtlSchema,
-} from "./options_pb.js";
-import { Plural, resolveDeferred, resolvePlural } from "./type-util.js";
-import { SchemaType } from "./types.js";
-
-import {
-  DescriptorProto,
-  DescriptorProtoSchema,
-  FieldDescriptorProto,
-  MessageOptionsSchema,
-} from "@bufbuild/protobuf/wkt";
-import { getRegisteredType, registerType, TypeDefinitionError } from "./type-registry.js";
-import { validateName } from "./validate.js";
+import { Field } from "./fields.js";
+import { getRegisteredType, registerType } from "./type-registry.js";
+import { Plural } from "./type-util.js";
+import { SchemaType, Validations } from "./types.js";
 
 /**
  * A PathTemplate is a url pattern that will be used to generate the path for an
@@ -70,23 +52,26 @@ export type PropertyPath = string;
  *   },
  * });
  */
-export interface Fields {
-  [fieldName: string]: Field;
-}
+export type Fields<FieldNames extends string = string> = Record<FieldNames, Field>;
 
-export interface ItemTypeConfig {
+export interface ItemType<FieldNames extends string = string> {
+  type: "item";
+
+  /**
+   * The name of the type. This is used in generated code and should be unique
+   * within a schema.
+   */
+  name: string;
+
   /**
    * One or more key paths that determine where the item is stored in the database.
    */
-  // TODO: In the future there may be more options than just the template - in
-  // that case this can be Plural<string | KeyPathConfig>
   keyPath: Plural<PathTemplate | KeyPathConfig>;
 
   /**
    * The set of fields that are defined on this type.
    */
-  // TODO: fieldNames must be camelCase and json-safe?
-  fields: Fields;
+  fields: Fields<FieldNames>;
 
   /**
    * An optional TTL for the item, which will cause it to be automatically
@@ -124,12 +109,26 @@ export interface ItemTypeConfig {
   reservedNames?: string[];
 
   /**
-   * Whether this entire item type is deprecated. This can affect generated
-   * code.
+   * Whether this entire item type is deprecated and why. This can affect
+   * generated code.
    */
-  deprecated?: boolean;
+  deprecated?: string;
 
-  // TODO: message-level CEL validations?
+  /**
+   * Documentation for this type. In general you can use JSDoc comments above
+   * this value instead of filling out this field, but since those comments are
+   * extracted via static analysis, you may need to put them here if you're
+   * generating types dynamically.
+   */
+  comments?: string;
+
+  /**
+   * A CEL (Common Expression Language) expression that will be used to validate
+   * this type. If data of this type does not pass the validation expression, it
+   * will be rejected.
+   * @see https://github.com/bufbuild/protovalidate/blob/main/docs/cel.md
+   */
+  valid?: Validations;
 }
 
 /**
@@ -182,229 +181,63 @@ export interface KeyPathConfig {
 /**
  * Configuration for a group-local index.
  */
-// TODO: We should validate that the groupLocalIndex is unique across all of
-// them.
 export interface GroupLocalIndexConfig {
   groupLocalIndex: 1 | 2 | 3 | 4;
   field: PropertyPath;
 }
 
-/**
- * Mapping from the string TTL source names to the protobuf enum.
- */
-const ttlSourceConvert: Record<TTLConfig["source"], Ttl_TtlSource> = {
-  fromCreated: Ttl_TtlSource.FROM_CREATED,
-  fromLastModified: Ttl_TtlSource.FROM_LAST_MODIFIED,
-  atTimestamp: Ttl_TtlSource.AT_TIMESTAMP,
-};
+export type ItemTypeConfig<FieldNames extends string = string> = Omit<
+  ItemType<FieldNames>,
+  "name" | "type"
+>;
 
 /**
  * Create a new item type. These are the "top level" items that are stored in
  * StatelyDB, and include information not only about the shape of their data but
  * also their key paths, indexes, TTL, etc.
  */
-export function itemType(name: string, itemTypeConfig: ItemTypeConfig): SchemaType {
+export function itemType<FieldNames extends string>(
+  name: string,
+  itemTypeConfig: ItemTypeConfig<FieldNames>,
+): ItemType<FieldNames> {
   const cachedType = getRegisteredType(name, "itemType", itemTypeConfig);
   if (cachedType) {
-    return cachedType;
+    return cachedType as ItemType<FieldNames>;
   }
-  if (!validateName(name)) {
-    // TODO: It would be nice to accumulate errors and return them all at once
-    throw new Error(`Invalid item type name: ${name}`);
-  }
-  const message = create(DescriptorProtoSchema, {
-    name,
-  });
-  const statelyOptions = create(StatelyMessageOptionsSchema);
-
-  // keyPath
-  for (const keyPath of resolvePlural(itemTypeConfig.keyPath)) {
-    const keyConfig = typeof keyPath === "string" ? { path: keyPath } : keyPath;
-    const pathTemplate = keyConfig.path;
-    const syncable = keyConfig.syncable ?? itemTypeConfig.syncable ?? true;
-    const versioned = keyConfig.versioned ?? itemTypeConfig.versioned ?? true;
-
-    // now generate the full key path config
-    statelyOptions.keyPaths.push(
-      create(MessageOptions_KeyPathSchema, {
-        pathTemplate,
-        supportedFeatureFlags: resolveSupportedFeatures({ syncable, versioned }),
-      }),
-    );
-  }
-
-  // TTL
-  if (itemTypeConfig.ttl) {
-    statelyOptions.ttl = create(TtlSchema, {
-      source: ttlSourceConvert[itemTypeConfig.ttl.source],
-    });
-
-    if ("durationSeconds" in itemTypeConfig.ttl) {
-      // Constant offset
-      statelyOptions.ttl.value = {
-        case: "durationSeconds",
-        value: BigInt(itemTypeConfig.ttl.durationSeconds),
-      };
-    } else if ("field" in itemTypeConfig.ttl) {
-      // Offset from a field reference
-      statelyOptions.ttl.value = {
-        case: "field",
-        value: itemTypeConfig.ttl.field,
-      };
-    }
-  }
-
-  // Indexes
-  for (const index of itemTypeConfig.indexes ?? []) {
-    statelyOptions.indexes.push(
-      create(MessageOptions_IndexSchema, {
-        groupLocalIndex: index.groupLocalIndex,
-        propertyPath: index.field,
-      }),
-    );
-  }
-
-  // set custom options
-  message.options = create(MessageOptionsSchema);
-  setExtension(message.options, messageExtension, statelyOptions);
-
-  // Set the cache early to stop infinite recursion
-  const schemaType = { name, parentType: message };
+  const schemaType: SchemaType = { ...itemTypeConfig, name, type: "item" };
   registerType("itemType", schemaType, itemTypeConfig);
-
-  // fields
-  message.field = populateFields(name, itemTypeConfig.fields);
-
-  // Reserved field names
-  populateReserved(message, itemTypeConfig);
-
-  // addSyntheticOneofs(message);
-
   return schemaType;
 }
 
-export type ObjectTypeConfig = Pick<ItemTypeConfig, "fields" | "reservedNames" | "deprecated">;
+export type ObjectType<FieldNames extends string = string> = Pick<
+  ItemType<FieldNames>,
+  "name" | "fields" | "reservedNames" | "deprecated" | "comments" | "valid"
+> & {
+  type: "object";
+};
+export type ObjectTypeConfig<FieldNames extends string = string> = Omit<
+  ObjectType<FieldNames>,
+  "type" | "name"
+>;
 
 /**
  * An object type is very much like an item type, but it can only be used as a
  * field of another item type or object type. In other words, it is meant for
  * nested structures.
  */
-export function objectType(name: string, itemTypeConfig: ObjectTypeConfig): SchemaType {
+export function objectType<FieldNames extends string>(
+  name: string,
+  itemTypeConfig: ObjectTypeConfig<FieldNames>,
+): ObjectType<FieldNames> {
   const cachedType = getRegisteredType(name, "objectType", itemTypeConfig);
   if (cachedType) {
-    return cachedType;
+    return cachedType as ObjectType<FieldNames>;
   }
-  const message = create(DescriptorProtoSchema, {
+  const schemaType: SchemaType = {
+    ...itemTypeConfig,
+    type: "object",
     name,
-  });
-
-  // Set the cache early to stop infinite recursion
-  const schemaType = { name, parentType: message };
+  };
   registerType("objectType", schemaType, itemTypeConfig);
-
-  // fields
-  message.field = populateFields(name, itemTypeConfig.fields);
-
-  // Reserved field names
-  populateReserved(message, itemTypeConfig);
-
-  // addSyntheticOneofs(message);
-
   return schemaType;
-}
-
-/**
- * Build up all the FieldDescriptorProtos for the fields in an item type or
- * object type.
- */
-function populateFields(typeName: string, fieldConfigs: ItemTypeConfig["fields"]) {
-  const fields: FieldDescriptorProto[] = [];
-  for (const [fieldName, fieldConfig] of Object.entries(fieldConfigs)) {
-    // TODO: validate field names further? e.g. force them to be camelCase?
-    if (!validateName(fieldName)) {
-      throw new Error(`Invalid field name in item type ${typeName}: ${fieldName}`);
-    }
-    try {
-      const fieldProto = field(fieldName, resolveDeferred(fieldConfig));
-      fields.push(fieldProto);
-    } catch (e) {
-      if (e instanceof TypeDefinitionError) {
-        throw e;
-      }
-      if (e instanceof Error) {
-        const match = /Cannot access '([^']+)' before initialization/.exec(e.message);
-        if (match) {
-          const badType = match[1];
-          throw new Error(
-            `Error in field ${typeName}.${fieldName}: ${e.message}.\nDeclare ${badType} as a function to allow using it before it's declared: export function ${badType}() { return objectType("${badType}", ...); }`,
-          );
-        }
-        throw new Error(`Error in field ${typeName}.${fieldName}: ${e.name}: ${e.message}`);
-      }
-      throw e;
-    }
-  }
-  return fields;
-}
-
-/**
- * Add reserved field ranges and reserved field names to a message
- * DescriptorProto.
- */
-function populateReserved(
-  message: DescriptorProto,
-  itemTypeConfig: Pick<ItemTypeConfig, "reservedNames">,
-) {
-  for (const fieldName of itemTypeConfig.reservedNames ?? []) {
-    if (message.field.some((field) => field.name === fieldName)) {
-      throw new Error(
-        `Field name ${fieldName} is reserved in ${message.name} but is also used as a field name.`,
-      );
-    }
-    message.reservedName.push(fieldName);
-  }
-}
-
-// /**
-//  * This adds "synthetic oneofs" to the message for each proto3 optional field.
-//  * @see https://protobuf.com/docs/descriptors#field-presence
-//  */
-// function addSyntheticOneofs(message: DescriptorProto) {
-//   if (message.oneofDecl.length) {
-//     throw new Error("addSyntheticOneofs should only be called on messages without existing oneofs");
-//   }
-//   for (const field of message.field) {
-//     if (field.proto3Optional) {
-//       message.oneofDecl.push(
-//         new OneofDescriptorProto({
-//           // The name must be the field name prepended with an underscore.
-//           name: `_${field.name}`,
-//         }),
-//       );
-//       field.oneofIndex = message.oneofDecl.length - 1;
-//     }
-//   }
-// }
-
-/**
- * resolveSupportedFeatures determines the supported features for a key path based
- * on the syncable and versioned flags.
- */
-function resolveSupportedFeatures({
-  syncable,
-  versioned,
-}: {
-  syncable: boolean;
-  versioned: boolean;
-}): SupportedFeatures {
-  let result = 0;
-  if (versioned) {
-    result |= SupportedFeatures.VERSIONED_GROUP;
-  }
-  if (syncable) {
-    result |= SupportedFeatures.SYNC;
-  }
-
-  return result;
 }
