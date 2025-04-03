@@ -1,7 +1,7 @@
 import { Field } from "./fields.js";
 import { getRegisteredType, registerType } from "./type-registry.js";
 import { Plural } from "./type-util.js";
-import { SchemaType, Validations } from "./types.js";
+import { SchemaType } from "./types.js";
 
 /**
  * A PathTemplate is a url pattern that will be used to generate the path for an
@@ -121,14 +121,6 @@ export interface ItemType<FieldNames extends string = string> {
    * generating types dynamically.
    */
   comments?: string;
-
-  /**
-   * A CEL (Common Expression Language) expression that will be used to validate
-   * this type. If data of this type does not pass the validation expression, it
-   * will be rejected.
-   * @see https://github.com/bufbuild/protovalidate/blob/main/docs/cel.md
-   */
-  valid?: Validations;
 }
 
 /**
@@ -211,7 +203,7 @@ export function itemType<FieldNames extends string>(
 
 export type ObjectType<FieldNames extends string = string> = Pick<
   ItemType<FieldNames>,
-  "name" | "fields" | "reservedNames" | "deprecated" | "comments" | "valid"
+  "name" | "fields" | "reservedNames" | "deprecated" | "comments"
 > & {
   type: "object";
 };

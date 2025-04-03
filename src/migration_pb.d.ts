@@ -16,8 +16,8 @@ export declare const file_migration: GenFile;
  * https://www.notion.so/Publishing-New-Schema-Versions-123b8fbb925d80b1bf93fe86ef49fd1d
  * for how this works. At a high level, these migration instructions are sent to
  * the server in a SchemaService.Put, along with a fully-specified schema
- * FileDescriptorProto representing the new state. The server then loads the old
- * schema version's FileDescriptorProto and uses the Migration's commands to
+ * SchemaPackage representing the new state. The server then loads the old
+ * schema version's SchemaPackage and uses the Migration's commands to
  * figure out how to build new type mappings for the new schema version.
  *
  * @generated from message stately.schemamodel.Migration

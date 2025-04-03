@@ -132,7 +132,7 @@ export async function build(
     return;
   }
 
-  // Add comment information to the FileDescriptorProto, statically extracted
+  // Add comment information to the SchemaPackage, statically extracted
   // from the TypeScript AST.
   try {
     const commentBindings = extractCommentBindings(program);

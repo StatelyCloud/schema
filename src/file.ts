@@ -182,7 +182,6 @@ function convertMessage(type: ObjectType | ItemType): MessageType {
     typeName: type.name,
     comments: type.comments,
     deprecated: type.deprecated,
-    validations: buildValidation(type.valid ? resolvePlural(type.valid) : []),
     fields: [],
     itemTypeOptions:
       type.type === "item"
