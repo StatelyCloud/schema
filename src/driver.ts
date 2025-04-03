@@ -2,7 +2,7 @@ import { create, toBinary } from "@bufbuild/protobuf";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-import { tsImport } from "tsx/esm/api";
+import { register } from "tsx/esm/api";
 import ts from "typescript";
 import { buildSourceCodeInfo, extractCommentBindings } from "./comments.js";
 import { DSLResponse, DSLResponseSchema } from "./dsl/cli_pb.js";
@@ -11,7 +11,7 @@ import { StatelyErrorDetails, StatelyErrorDetailsSchema } from "./errors/error_d
 import { file } from "./file.js";
 import { DeferredMigration } from "./migrate.js";
 import { SchemaPackage } from "./package_pb.js";
-import { Deferred, Plural } from "./type-util.js";
+import { Deferred, Plural, resolvePlural } from "./type-util.js";
 import { type SchemaType } from "./types.js";
 
 /**
@@ -84,12 +84,25 @@ export async function build(
     return;
   }
 
-  // Import from the generated code.
+  // Import from the generated code. This form of tsx's import function will
+  // preserve the imported namespace between invocations so we can do two
+  // imports (one for the schema, one for the registry) and they'll share state.
+  const tsx = register({
+    namespace: Date.now().toString(),
+  });
+
+  // Patch the console within the tsx context so that we can capture console.log from stderr - stdout is reserved for
+  // the output of the schema.
+  await tsx.import("./patch-console.js", import.meta.url);
+
   let exportedValues: {
+    // Deferred because the exported value may be a function that returns a type, instead of the type itself.
+    // Plural because the function may return multiple types (currently only done from tests).
     [name: string]: Deferred<Plural<SchemaType>> | DeferredMigration;
   };
+  // First import the user's schema, which runs all the top level declarations.
   try {
-    exportedValues = (await tsImport(fullInputPath, import.meta.url)) as typeof exportedValues;
+    exportedValues = (await tsx.import(fullInputPath, import.meta.url)) as typeof exportedValues;
   } catch (e) {
     await respondWithError(
       e,
@@ -99,20 +112,39 @@ export async function build(
     return;
   }
 
-  const deferredMigrations: DeferredMigration[] = [];
-  const schemaTypes: Deferred<Plural<SchemaType>>[] = [];
+  // Then fish out all the types and migrations from the registry, which records
+  // them as they are invoked.
+  const { getAllTypes, getAllMigrations } = (await tsx.import(
+    "./type-registry.js",
+    import.meta.url,
+  )) as {
+    getAllTypes: () => SchemaType[];
+    getAllMigrations: () => DeferredMigration[];
+  };
 
-  // The export names don't matter, only the exported values
+  const deferredMigrations: DeferredMigration[] = getAllMigrations();
+  const schemaTypes: SchemaType[] = getAllTypes();
+
+  // Also look through the exported values for more types. This is mostly to
+  // catch types that were declared as functions that weren't then used
+  // elsewhere.
   for (const value of Object.values(exportedValues)) {
-    // We cannot compare types of values with "instanceof" because the
-    // DeferredMigration type used in the customer's schema file is
-    // a different copy of the class from the one we've imported here.
-    // One is imported directly and the other is interpreted through
-    // "tsImport". So instead we use the constructor name to compare types.
-    if (value.constructor.name === "DeferredMigration") {
-      deferredMigrations.push(value as DeferredMigration);
-    } else {
-      schemaTypes.push(value as Deferred<Plural<SchemaType>>);
+    if (typeof value === "function" && value.length === 0) {
+      const maybeTypes = value();
+      for (const maybeType of resolvePlural(maybeTypes)) {
+        if (
+          maybeType &&
+          typeof maybeType === "object" &&
+          "type" in maybeType &&
+          ["item", "object", "enum", "alias"].includes(maybeType.type)
+        ) {
+          if (schemaTypes.includes(maybeType)) {
+            // This type has already been registered, so skip it.
+            continue;
+          }
+          schemaTypes.push(maybeType);
+        }
+      }
     }
   }
 

@@ -84,8 +84,7 @@ export function enumType<V extends string>(
   values: { [name in V]: number | EnumValue },
   config: EnumConfig = {},
 ): EnumType<V> {
-  const fullEnumConfig = { values, config };
-  const cached = getRegisteredType(name, "enumType", fullEnumConfig);
+  const cached = getRegisteredType(name, "enum");
   if (cached) {
     return cached as EnumType<V>;
   }
@@ -112,6 +111,5 @@ export function enumType<V extends string>(
     comments: config.comments,
     deprecated: config.deprecated,
   };
-  registerType("enumType", schemaType, fullEnumConfig);
-  return schemaType;
+  return registerType(schemaType);
 }

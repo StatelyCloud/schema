@@ -7,6 +7,7 @@ import {
   MigrationSchema,
 } from "./migration_pb.js";
 import { stringifyDefault } from "./stringify.js";
+import { registerMigration } from "./type-registry.js";
 
 // TODO: Pass types into these functions, use that to check the types of the arguments.
 
@@ -430,7 +431,7 @@ export function migrate(
   name: string,
   migrateFn: (m: Migrator) => void,
 ): DeferredMigration {
-  return new DeferredMigration(fromSchemaVersion, name, migrateFn);
+  return registerMigration(new DeferredMigration(fromSchemaVersion, name, migrateFn));
 }
 
 export type { Migrator, TypeMigrator };

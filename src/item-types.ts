@@ -1,7 +1,6 @@
 import { Field } from "./fields.js";
 import { getRegisteredType, registerType } from "./type-registry.js";
 import { Plural } from "./type-util.js";
-import { SchemaType } from "./types.js";
 
 /**
  * A PathTemplate is a url pattern that will be used to generate the path for an
@@ -192,13 +191,12 @@ export function itemType<FieldNames extends string>(
   name: string,
   itemTypeConfig: ItemTypeConfig<FieldNames>,
 ): ItemType<FieldNames> {
-  const cachedType = getRegisteredType(name, "itemType", itemTypeConfig);
+  const cachedType = getRegisteredType(name, "item");
   if (cachedType) {
     return cachedType as ItemType<FieldNames>;
   }
-  const schemaType: SchemaType = { ...itemTypeConfig, name, type: "item" };
-  registerType("itemType", schemaType, itemTypeConfig);
-  return schemaType;
+  const schemaType: ItemType<FieldNames> = { ...itemTypeConfig, name, type: "item" };
+  return registerType(schemaType);
 }
 
 export type ObjectType<FieldNames extends string = string> = Pick<
@@ -221,15 +219,14 @@ export function objectType<FieldNames extends string>(
   name: string,
   itemTypeConfig: ObjectTypeConfig<FieldNames>,
 ): ObjectType<FieldNames> {
-  const cachedType = getRegisteredType(name, "objectType", itemTypeConfig);
+  const cachedType = getRegisteredType(name, "object");
   if (cachedType) {
     return cachedType as ObjectType<FieldNames>;
   }
-  const schemaType: SchemaType = {
+  const schemaType: ObjectType<FieldNames> = {
     ...itemTypeConfig,
     type: "object",
     name,
   };
-  registerType("objectType", schemaType, itemTypeConfig);
-  return schemaType;
+  return registerType(schemaType);
 }

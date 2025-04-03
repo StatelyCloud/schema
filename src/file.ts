@@ -42,7 +42,7 @@ import {
   TypeSchema,
 } from "./package_pb.js";
 import { stringifyDefault } from "./stringify.js";
-import { Deferred, Plural, resolveDeferred, resolvePlural } from "./type-util.js";
+import { resolveDeferred, resolvePlural } from "./type-util.js";
 import {
   ProtoScalarType,
   resolveType,
@@ -56,7 +56,7 @@ import {
  * Convert the list of known schema types into a SchemaPackage protobuf message.
  */
 export function file(
-  schemaTypes: Deferred<Plural<SchemaType>>[],
+  schemaTypes: SchemaType[],
   fileName: string,
   packageName: string,
 ): SchemaPackage {
@@ -73,63 +73,61 @@ export function file(
     },
   });
 
+  // This shouldn't be possible because of the type registry, but just in case
   const seenTypes = new Map<string, SchemaType>();
 
-  for (const exportValue of schemaTypes) {
-    const schemaTypes = resolvePlural(resolveDeferred(exportValue));
-    for (const schemaType of schemaTypes) {
-      // First check to see if this is even a field config. TODO: We could
-      // switch this to a class, or add a symbol type to the objects, to make
-      // this more robust.
-      if (
-        typeof schemaType !== "object" ||
-        !("type" in schemaType) ||
-        !["type", "item", "object", "enum"].includes(schemaType.type)
-      ) {
-        // Skip this, it allows exporting string/number constants and such
-        continue;
-      }
+  const addType = (schemaType: SchemaType) => {
+    const name = schemaType.name;
 
-      const name = schemaType.name;
-
-      const { underlyingType } = resolveType(schemaType);
-      // Don't add the same type twice (e.g. if it's exported multiple times)
-      if (seenTypes.has(name)) {
-        if (seenTypes.get(name) !== underlyingType) {
-          throw new SchemaError(
-            "SchemaDuplicateType",
-            `Found two types with the same name: ${name}`,
-          );
-        }
-        continue;
+    const { underlyingType } = resolveType(schemaType);
+    // Don't add the same type twice (e.g. if it's exported multiple times)
+    if (seenTypes.has(name)) {
+      if (seenTypes.get(name) !== underlyingType) {
+        throw new SchemaError("SchemaDuplicateType", `Found two types with the same name: ${name}`);
       }
-
-      // If the underlying type is a ProtoScalarType enum value, it's really a
-      // number. Everything else is an object.
-      if (typeof underlyingType === "number") {
-        if (schemaType.type === "alias" && !schemaType.noAlias) {
-          pkg.typeAliases.push(convertAlias(schemaType));
-          seenTypes.set(name, schemaType);
-        }
-        continue;
-      }
-
-      switch (underlyingType.type) {
-        case "enum":
-          pkg.enums.push(convertEnum(underlyingType));
-          break;
-        case "item":
-          pkg.messages.push(convertMessage(underlyingType));
-          break;
-        case "object":
-          pkg.messages.push(convertMessage(underlyingType));
-          break;
-        default:
-          // It's either a proto scalar or something we don't know about
-          continue;
-      }
-      seenTypes.set(name, underlyingType);
+      return;
     }
+
+    // If the underlying type is a ProtoScalarType enum value, it's really a
+    // number. Everything else is an object.
+    if (typeof underlyingType === "number") {
+      if (schemaType.type === "alias" && !schemaType.noAlias) {
+        pkg.typeAliases.push(convertAlias(schemaType));
+        seenTypes.set(name, schemaType);
+      }
+      return;
+    }
+
+    seenTypes.set(name, underlyingType);
+    switch (underlyingType.type) {
+      case "enum":
+        pkg.enums.push(convertEnum(underlyingType));
+        break;
+      case "item":
+        pkg.messages.push(convertMessage(underlyingType, addType));
+        break;
+      case "object":
+        pkg.messages.push(convertMessage(underlyingType, addType));
+        break;
+      default:
+        // It's either a proto scalar or something we don't know about
+        return;
+    }
+  };
+
+  for (const schemaType of schemaTypes) {
+    // First check to see if this is even a field config. TODO: We could
+    // switch this to a class, or add a symbol type to the objects, to make
+    // this more robust.
+    if (
+      typeof schemaType !== "object" ||
+      !("type" in schemaType) ||
+      !["type", "item", "object", "enum"].includes(schemaType.type)
+    ) {
+      // Skip this, it allows exporting string/number constants and such
+      continue;
+    }
+    addType(schemaType);
   }
 
   return pkg;
@@ -177,7 +175,10 @@ function convertAlias(typeAlias: TypeAlias): PkgTypeAlias {
   return pkgTypeAlias;
 }
 
-function convertMessage(type: ObjectType | ItemType): MessageType {
+function convertMessage(
+  type: ObjectType | ItemType,
+  addType: (t: SchemaType) => void,
+): MessageType {
   const messageType = create(MessageTypeSchema, {
     typeName: type.name,
     comments: type.comments,
@@ -193,7 +194,7 @@ function convertMessage(type: ObjectType | ItemType): MessageType {
         : undefined,
   });
   for (const [name, field] of Object.entries(type.fields)) {
-    messageType.fields.push(buildField(name, field));
+    messageType.fields.push(buildField(name, field, addType));
   }
   return messageType;
 }
@@ -214,7 +215,7 @@ const fromInitialValue: Record<NonNullable<FieldInitialValue["initialValue"]>, I
   rand53: InitialValue.RAND53,
 };
 
-function buildField(name: string, field: Field): PkgField {
+function buildField(name: string, field: Field, addType: (t: SchemaType) => void): PkgField {
   const type = resolveDeferred(field.type);
   // TODO: Move this check to the schema lib
   if (type.type === "item") {
@@ -234,6 +235,9 @@ function buildField(name: string, field: Field): PkgField {
     fieldType: buildElementType(typeInfo),
     readDefault: stringifyDefault(field.readDefault /* ?? typeInfo.readDefault */),
   });
+  if (typeof typeInfo.underlyingType !== "number") {
+    addType(typeInfo.underlyingType);
+  }
 
   let ephemeral = false;
   if ("fromMetadata" in field && field.fromMetadata) {

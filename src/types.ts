@@ -201,8 +201,7 @@ export function type(
   parentType: SchemaType | ProtoScalarType,
   config: TypeAliasConfig = {},
 ): SchemaType {
-  const fullConfig = { ...config, parentType };
-  const cached = getRegisteredType(name, "type", fullConfig);
+  const cached = getRegisteredType(name, "alias");
   if (cached) {
     return cached;
   }
@@ -212,7 +211,7 @@ export function type(
     name,
     type: "alias",
   };
-  return registerType("type", schema, fullConfig);
+  return registerType(schema);
 }
 
 /**

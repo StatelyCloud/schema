@@ -221,14 +221,39 @@ export function extractCommentBindings(program: ts.Program): Record<string, Comm
    */
   function processNode(node: ts.Node) {
     if (node.kind === ts.SyntaxKind.FunctionDeclaration) {
+      // A function declaration that hopefully returns an invocation of one of our type factories, e.g.:
+      // /** This is a Person */
+      // function Person() { return itemType("Person", { ... }); }
       const info = processFunctionDeclaration(node as ts.FunctionDeclaration);
       if (info) {
         commentBindings[info.name] = info;
       }
+    } else if (node.kind === ts.SyntaxKind.ExpressionStatement) {
+      // An expression statement that hopefully contains a call to one of our type factories, e.g.:
+      // /** This is a Person */
+      // itemType("Person", { ... });
+      const expr = (node as ts.ExpressionStatement).expression;
+      if (expr.kind === ts.SyntaxKind.CallExpression) {
+        const info = processCallExpression(expr as ts.CallExpression);
+        if (info) {
+          // Check for a JSDoc comment on the expression declaration itself and
+          // merge it with the one from the function invocation.
+          const jsDoc = extractJSDoc(node);
+          if (jsDoc) {
+            info.comment = appendComment(info.comment, jsDoc);
+          }
+          commentBindings[info.name] = info;
+        }
+      }
     } else if (node.kind === ts.SyntaxKind.VariableStatement) {
+      // A variable statement that hopefully contains a call to one of our type factories, e.g.:
+      // /** This is a Person */
+      // const Person = itemType("Person", { ... });
       for (const declaration of (node as ts.VariableStatement).declarationList.declarations) {
         const info = processVariableDeclaration(declaration);
         if (info) {
+          // Check for a JSDoc comment on the variable declaration itself and merge it with the
+          // one from the function invocation.
           const jsDoc = extractJSDoc(node);
           if (jsDoc) {
             info.comment = appendComment(info.comment, jsDoc);
@@ -240,6 +265,7 @@ export function extractCommentBindings(program: ts.Program): Record<string, Comm
       // TODO: read imports to find out if they aliased imports of `itemType` et
       // al as something else?
     } else if (node.kind === ts.SyntaxKind.SyntaxList || node.kind === ts.SyntaxKind.SourceFile) {
+      // A list of statements or a source file. Dig one level deeper.
       for (const child of node.getChildren()) {
         processNode(child);
       }
