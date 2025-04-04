@@ -1,4 +1,5 @@
 import { DeferredMigration } from "./migrate.js";
+import { SchemaDefaults } from "./schema-defaults.js";
 import { SchemaType } from "./types.js";
 
 export class TypeDefinitionError extends Error {
@@ -25,6 +26,7 @@ export class TypeDefinitionError extends Error {
  */
 const registry = new Map<string, SchemaType>();
 const migrations: DeferredMigration[] = [];
+let schemaDefaults: SchemaDefaults | undefined = undefined;
 
 /**
  * Retrieve an existing type from the registry. If there is already a different
@@ -65,6 +67,14 @@ export function registerMigration(migration: DeferredMigration): DeferredMigrati
   return migration;
 }
 
+export function registerSchemaDefaults(defaults: SchemaDefaults): SchemaDefaults {
+  if (schemaDefaults !== undefined) {
+    throw new TypeDefinitionError("You cannot call schemadefaults() more than once");
+  }
+  schemaDefaults = defaults;
+  return schemaDefaults;
+}
+
 /**
  * Read back all the migrations in the registry, in roughly the order they were
  * defined.
@@ -79,4 +89,8 @@ export function getAllTypes(): SchemaType[] {
  */
 export function getAllMigrations(): DeferredMigration[] {
   return migrations;
+}
+
+export function getSchemaDefaults(): SchemaDefaults {
+  return schemaDefaults ?? {};
 }

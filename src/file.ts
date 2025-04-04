@@ -41,6 +41,7 @@ import {
   TypeAliasSchema,
   TypeSchema,
 } from "./package_pb.js";
+import { SchemaDefaults } from "./schema-defaults.js";
 import { stringifyDefault } from "./stringify.js";
 import { resolveDeferred, resolvePlural } from "./type-util.js";
 import {
@@ -57,9 +58,19 @@ import {
  */
 export function file(
   schemaTypes: SchemaType[],
+  schemaDefaults: SchemaDefaults,
   fileName: string,
   packageName: string,
 ): SchemaPackage {
+  // TODO: We don't actually need to set this at the schema level.
+  let supportedFeatureFlags: SupportedFeatures = 0;
+  if (schemaDefaults.syncable ?? true) {
+    supportedFeatureFlags |= SupportedFeatures.SYNC;
+  }
+  if (schemaDefaults.versioned ?? true) {
+    supportedFeatureFlags |= SupportedFeatures.VERSIONED_GROUP;
+  }
+
   const pkg = create(SchemaPackageSchema, {
     // TODO: let the backend fill these in
     fileName: `${fileName || "stately"}.proto`,
@@ -68,8 +79,10 @@ export function file(
     enums: [],
     typeAliases: [],
     defaultGroupConfig: {
-      tombstoneDurationSeconds: 0n, // Default, 60 days
-      supportedFeatureFlags: SupportedFeatures.SYNC | SupportedFeatures.VERSIONED_GROUP,
+      tombstoneDurationSeconds: BigInt(
+        schemaDefaults.tombstoneTTLHours ?? 0 /* 0 = default = 60 days */,
+      ),
+      supportedFeatureFlags,
     },
   });
 
@@ -104,10 +117,10 @@ export function file(
         pkg.enums.push(convertEnum(underlyingType));
         break;
       case "item":
-        pkg.messages.push(convertMessage(underlyingType, addType));
+        pkg.messages.push(convertMessage(underlyingType, schemaDefaults, addType));
         break;
       case "object":
-        pkg.messages.push(convertMessage(underlyingType, addType));
+        pkg.messages.push(convertMessage(underlyingType, schemaDefaults, addType));
         break;
       default:
         // It's either a proto scalar or something we don't know about
@@ -177,6 +190,7 @@ function convertAlias(typeAlias: TypeAlias): PkgTypeAlias {
 
 function convertMessage(
   type: ObjectType | ItemType,
+  schemaDefaults: SchemaDefaults,
   addType: (t: SchemaType) => void,
 ): MessageType {
   const messageType = create(MessageTypeSchema, {
@@ -187,7 +201,7 @@ function convertMessage(
     itemTypeOptions:
       type.type === "item"
         ? {
-            keyPaths: buildKeyPaths(type),
+            keyPaths: buildKeyPaths(type, schemaDefaults),
             ttl: buildTTL(type.ttl),
             indexes: buildIndexes(type.indexes),
           }
@@ -286,16 +300,18 @@ function buildValidation(valid: (string | Validation)[]): Constraint[] {
   });
 }
 
-function buildKeyPaths(itemType: ItemType): MessageOptions_KeyPath[] {
+function buildKeyPaths(
+  itemType: ItemType,
+  schemaDefaults: SchemaDefaults,
+): MessageOptions_KeyPath[] {
   return resolvePlural(itemType.keyPath).map((keyPath) => {
     const keyConfig = typeof keyPath === "string" ? { path: keyPath } : keyPath;
     const k = create(MessageOptions_KeyPathSchema, {
       pathTemplate: keyConfig.path,
       supportedFeatureFlags: 0,
     });
-    // TODO: fall back to a schema-level default for syncable/versioned
-    const syncable = keyConfig.syncable ?? itemType.syncable ?? true;
-    const versioned = keyConfig.versioned ?? itemType.versioned ?? true;
+    const syncable = keyConfig.syncable ?? itemType.syncable ?? schemaDefaults.syncable ?? true;
+    const versioned = keyConfig.versioned ?? itemType.versioned ?? schemaDefaults.syncable ?? true;
     if (syncable) {
       k.supportedFeatureFlags! |= SupportedFeatures.SYNC;
     }

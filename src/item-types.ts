@@ -81,15 +81,15 @@ export interface ItemType<FieldNames extends string = string> {
   /**
    * Whether or not an item type is syncable. Non-syncable item types will be
    * omitted from SyncList responses. Non-syncable items are cheaper to store
-   * and write. The default is syncable.
+   * and write. The default is syncable. This can be overridden per key path.
    */
   syncable?: boolean;
 
   /**
    * Whether or not group versioning is enabled for this item type. Group
-   * versioned items are optimized for transactions that modify multiple
-   * items in the same group. All item types in a group must be versioned
-   * or not versioned. The default is versioned.
+   * versioned items are optimized for transactions that modify multiple items
+   * in the same group. All item types in a group must be versioned or not
+   * versioned. The default is versioned. This can be overridden per key path.
    */
   versioned?: boolean;
 
@@ -144,7 +144,6 @@ export type TTLConfig = {
 export interface KeyPathConfig {
   /**
    * The path template for the key path.
-   * @see PathTemplate
    */
   path: PathTemplate;
 
@@ -153,7 +152,6 @@ export interface KeyPathConfig {
    * paths that are syncable and some that are not, as a way to control costs. If
    * this option is not specified here, it inherits the value of the item type's
    * `syncable` option, which defaults to `true`.
-   * @see ItemTypeConfig.syncable
    */
   syncable?: boolean;
 
@@ -164,7 +162,6 @@ export interface KeyPathConfig {
    * transactions with other items in the same group. If this option is not
    * specified here, it inherits the value of the item type's `versioned` flag,
    * which defaults to `true`.
-   * @see ItemTypeConfig.versioned
    */
   versioned?: boolean;
 }

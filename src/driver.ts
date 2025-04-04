@@ -11,6 +11,7 @@ import { StatelyErrorDetails, StatelyErrorDetailsSchema } from "./errors/error_d
 import { file } from "./file.js";
 import { DeferredMigration } from "./migrate.js";
 import { SchemaPackage } from "./package_pb.js";
+import { SchemaDefaults } from "./schema-defaults.js";
 import { Deferred, Plural, resolvePlural } from "./type-util.js";
 import { type SchemaType } from "./types.js";
 
@@ -114,16 +115,18 @@ export async function build(
 
   // Then fish out all the types and migrations from the registry, which records
   // them as they are invoked.
-  const { getAllTypes, getAllMigrations } = (await tsx.import(
+  const { getAllTypes, getAllMigrations, getSchemaDefaults } = (await tsx.import(
     "./type-registry.js",
     import.meta.url,
   )) as {
     getAllTypes: () => SchemaType[];
     getAllMigrations: () => DeferredMigration[];
+    getSchemaDefaults: () => SchemaDefaults;
   };
 
   const deferredMigrations: DeferredMigration[] = getAllMigrations();
   const schemaTypes: SchemaType[] = getAllTypes();
+  const schemaDefaults = getSchemaDefaults();
 
   // Also look through the exported values for more types. This is mostly to
   // catch types that were declared as functions that weren't then used
@@ -151,7 +154,7 @@ export async function build(
   // Process into a SchemaPackage
   let pkg: SchemaPackage;
   try {
-    pkg = file(schemaTypes, fileName, packageName);
+    pkg = file(schemaTypes, schemaDefaults, fileName, packageName);
   } catch (e) {
     if (e instanceof SchemaError) {
       const output = create(DSLResponseSchema, {

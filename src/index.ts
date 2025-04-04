@@ -8,5 +8,6 @@ export * from "./fields.js";
 export * from "./item-types.js";
 export * from "./known-types.js";
 export { migrate, type Migrator, type TypeMigrator } from "./migrate.js";
+export * from "./schema-defaults.js";
 export type { Deferred, Plural } from "./type-util.js";
 export * from "./types.js";

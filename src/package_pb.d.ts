@@ -68,7 +68,7 @@ export declare type SchemaPackage = Message<"stately.schemamodel.SchemaPackage">
   typeAliases: TypeAlias[];
 
   /**
-   * DefaultGroupConfig is the default configuration for a group within a store.
+   * DefaultGroupConfig is the default configuration for a group within a schema.
    *
    * @generated from field: stately.schemamodel.DefaultGroupConfig default_group_config = 6;
    */
@@ -82,7 +82,7 @@ export declare type SchemaPackage = Message<"stately.schemamodel.SchemaPackage">
 export declare const SchemaPackageSchema: GenMessage<SchemaPackage>;
 
 /**
- * DefaultGroupConfig is the default configuration for a group within a store.
+ * DefaultGroupConfig is the default configuration for a group within a schema.
  *
  * @generated from message stately.schemamodel.DefaultGroupConfig
  */
@@ -98,7 +98,8 @@ export declare type DefaultGroupConfig = Message<"stately.schemamodel.DefaultGro
    * 2 = NATIVE_SYNC // Not yet implemented
    * 3 = VERSIONED_GROUP_SYNC
    *
-   * @generated from field: stately.schemamodel.SupportedFeatures supported_feature_flags = 1;
+   * @generated from field: stately.schemamodel.SupportedFeatures supported_feature_flags = 1 [deprecated = true];
+   * @deprecated
    */
   supportedFeatureFlags: SupportedFeatures;
 
