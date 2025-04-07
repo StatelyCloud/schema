@@ -53,6 +53,9 @@ export type PropertyPath = string;
  */
 export type Fields<FieldNames extends string = string> = Record<FieldNames, Field>;
 
+export type FieldNames<T extends ItemType | ObjectType> =
+  T extends ObjectType<infer V> ? V : T extends ItemType<infer V> ? V : never;
+
 export interface ItemType<FieldNames extends string = string> {
   type: "item";
 

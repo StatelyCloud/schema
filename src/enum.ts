@@ -51,6 +51,9 @@ export interface EnumType<V extends string = string> {
   deprecated?: string;
 }
 
+/** EnumValues is a type helper to extract the value names from an enum type. */
+export type EnumValues<ET extends EnumType> = ET extends EnumType<infer V> ? V : never;
+
 export type EnumConfig = Omit<EnumType, "type" | "values" | "name">;
 
 /**
