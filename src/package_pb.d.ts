@@ -68,7 +68,8 @@ export declare type SchemaPackage = Message<"stately.schemamodel.SchemaPackage">
   typeAliases: TypeAlias[];
 
   /**
-   * DefaultGroupConfig is the default configuration for a group within a schema.
+   * DefaultGroupConfig is the default configuration for a group within a
+   * schema. If not provided, global default values are used.
    *
    * @generated from field: stately.schemamodel.DefaultGroupConfig default_group_config = 6;
    */
@@ -98,8 +99,7 @@ export declare type DefaultGroupConfig = Message<"stately.schemamodel.DefaultGro
    * 2 = NATIVE_SYNC // Not yet implemented
    * 3 = VERSIONED_GROUP_SYNC
    *
-   * @generated from field: stately.schemamodel.SupportedFeatures supported_feature_flags = 1 [deprecated = true];
-   * @deprecated
+   * @generated from field: stately.schemamodel.SupportedFeatures supported_feature_flags = 1;
    */
   supportedFeatureFlags: SupportedFeatures;
 
@@ -247,11 +247,19 @@ export declare const EnumTypeSchema: GenMessage<EnumType>;
 /**
  * TypeAlias are used to define a new type that is an alias for an existing type.
  *
+ * option (buf.validate.message).cel = {
+ *   id: "type_alias.disallowed_element_type"
+ *   message: "type aliases cannot be for collections, one-ofs, other aliases, or enums"
+ *   expression: "!has(this.element_type.list) && !has(this.element_type.reference_by_name) && !has(this.element_type.reference_by_storage_id)"
+ * };
+ *
  * @generated from message stately.schemamodel.TypeAlias
  */
 export declare type TypeAlias = Message<"stately.schemamodel.TypeAlias"> & {
   /**
    * The name of the alias type.
+   *
+   * [(buf.validate.field).required = true];
    *
    * @generated from field: string type_name = 1;
    */
@@ -270,6 +278,8 @@ export declare type TypeAlias = Message<"stately.schemamodel.TypeAlias"> & {
 
   /**
    * element_type is the type that the alias is for.
+   *
+   * [(buf.validate.field).required = true];
    *
    * @generated from field: stately.schemamodel.Type element_type = 3;
    */

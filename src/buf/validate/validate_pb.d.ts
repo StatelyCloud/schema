@@ -18,70 +18,13 @@
 
 import type { Message } from "@bufbuild/protobuf";
 import type { GenEnum, GenExtension, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv1";
-import type {
-  Duration,
-  FieldOptions,
-  MessageOptions,
-  OneofOptions,
-  Timestamp,
-} from "@bufbuild/protobuf/wkt";
+import type { Duration, FieldOptions, OneofOptions, Timestamp } from "@bufbuild/protobuf/wkt";
 import type { Constraint } from "./expression_pb.js";
 
 /**
  * Describes the file buf/validate/validate.proto.
  */
 export declare const file_buf_validate_validate: GenFile;
-
-/**
- * MessageConstraints represents validation rules that are applied to the entire message.
- * It includes disabling options and a list of Constraint messages representing Common Expression Language (CEL) validation rules.
- *
- * @generated from message buf.validate.MessageConstraints
- */
-export declare type MessageConstraints = Message<"buf.validate.MessageConstraints"> & {
-  /**
-   * `disabled` is a boolean flag that, when set to true, nullifies any validation rules for this message.
-   * This includes any fields within the message that would otherwise support validation.
-   *
-   * ```proto
-   * message MyMessage {
-   *   // validation will be bypassed for this message
-   *   option (buf.validate.message).disabled = true;
-   * }
-   * ```
-   *
-   * @generated from field: optional bool disabled = 1;
-   */
-  disabled?: boolean;
-
-  /**
-   * `cel` is a repeated field of type Constraint. Each Constraint specifies a validation rule to be applied to this message.
-   * These constraints are written in Common Expression Language (CEL) syntax. For more information on
-   * CEL, [see our documentation](https://github.com/bufbuild/protovalidate/blob/main/docs/cel.md).
-   *
-   *
-   * ```proto
-   * message MyMessage {
-   *   // The field `foo` must be greater than 42.
-   *   option (buf.validate.message).cel = {
-   *     id: "my_message.value",
-   *     message: "value must be greater than 42",
-   *     expression: "this.foo > 42",
-   *   };
-   *   optional int32 foo = 1;
-   * }
-   * ```
-   *
-   * @generated from field: repeated buf.validate.Constraint cel = 3;
-   */
-  cel: Constraint[];
-};
-
-/**
- * Describes the message buf.validate.MessageConstraints.
- * Use `create(MessageConstraintsSchema)` to create a new message.
- */
-export declare const MessageConstraintsSchema: GenMessage<MessageConstraints>;
 
 /**
  * The `OneofConstraints` message type enables you to manage constraints for
@@ -4042,14 +3985,6 @@ export enum KnownRegex {
  * Describes the enum buf.validate.KnownRegex.
  */
 export declare const KnownRegexSchema: GenEnum<KnownRegex>;
-
-/**
- * Rules specify the validations to be performed on this message. By default,
- * no validation is performed against a message.
- *
- * @generated from extension: optional buf.validate.MessageConstraints message = 1159;
- */
-export declare const message: GenExtension<MessageOptions, MessageConstraints>;
 
 /**
  * Rules specify the validations to be performed on this oneof. By default,

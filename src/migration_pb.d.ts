@@ -94,8 +94,6 @@ export declare type MigrateAction = Message<"stately.schemamodel.MigrateAction">
   action:
     | {
         /**
-         * Item Type / Object Type Fields
-         *
          * @generated from field: stately.schemamodel.AddField add_field = 2;
          */
         value: AddField;
@@ -141,8 +139,6 @@ export declare type MigrateAction = Message<"stately.schemamodel.MigrateAction">
       }
     | {
         /**
-         * Item/Object/Enum Types
-         *
          * @generated from field: stately.schemamodel.RenameType rename_type = 6;
          */
         value: RenameType;
@@ -164,8 +160,6 @@ export declare type MigrateAction = Message<"stately.schemamodel.MigrateAction">
       }
     | {
         /**
-         * Enums
-         *
          * @generated from field: stately.schemamodel.RenameEnumValue rename_enum_value = 9;
          */
         value: RenameEnumValue;
@@ -185,6 +179,15 @@ export declare type MigrateAction = Message<"stately.schemamodel.MigrateAction">
         value: RemoveEnumValue;
         case: "removeEnumValue";
       }
+    | {
+        /**
+         * TODO: RemoveKeyPath remove_key_path = ?;
+         *
+         * @generated from field: stately.schemamodel.AddKeyPath add_key_path = 15;
+         */
+        value: AddKeyPath;
+        case: "addKeyPath";
+      }
     | { case: undefined; value?: undefined };
 };
 
@@ -193,6 +196,29 @@ export declare type MigrateAction = Message<"stately.schemamodel.MigrateAction">
  * Use `create(MigrateActionSchema)` to create a new message.
  */
 export declare const MigrateActionSchema: GenMessage<MigrateAction>;
+
+/**
+ * AddKeyPath adds an entirely new templated key path.
+ * This key path must match one of the key paths defined
+ * in the new schema version and have never been used before,
+ * even if it was removed before. Stately will start a backfill
+ * process to populate all stores bound to this schema once
+ * the schema is `put`.
+ *
+ * @generated from message stately.schemamodel.AddKeyPath
+ */
+export declare type AddKeyPath = Message<"stately.schemamodel.AddKeyPath"> & {
+  /**
+   * @generated from field: string key_path = 1;
+   */
+  keyPath: string;
+};
+
+/**
+ * Describes the message stately.schemamodel.AddKeyPath.
+ * Use `create(AddKeyPathSchema)` to create a new message.
+ */
+export declare const AddKeyPathSchema: GenMessage<AddKeyPath>;
 
 /**
  * ModifyFieldReadDefault changes the read default value of a field in an item/object type.

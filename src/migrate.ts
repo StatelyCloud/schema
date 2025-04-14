@@ -75,6 +75,31 @@ class TypeMigrator<FieldNames extends string = string> {
   }
 
   /**
+   * Mark a key path in the item type as added since the schema version passed
+   * to the migrate function. The provided key path must have never been used
+   * in the schema before. During the schema put command, Stately will populate
+   * this new key path for every store bound to this schema. The backfill will
+   * be performed synchronously when you call `stately schema put` but eventually
+   * will be done in the background with the status displayed in the Stately
+   * console under the Stores or Schema pages.
+   * @param keyPaths
+   */
+  addKeyPath(...keyPaths: string[]) {
+    for (const kp of keyPaths) {
+      this.command.actions.push(
+        create(MigrateActionSchema, {
+          action: {
+            case: "addKeyPath",
+            value: {
+              keyPath: kp,
+            },
+          },
+        }),
+      );
+    }
+  }
+
+  /**
    * Mark a field in the type as removed since the schema version passed to the
    * migrate function. If you are removing a field that was required, you must
    * provide a readDefault value in this command. When removing non-required
