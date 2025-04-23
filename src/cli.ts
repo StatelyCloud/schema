@@ -11,7 +11,7 @@ try {
     migrationsFromSchemaVersionStr = undefined,
   ] = process.argv;
   const migrationsFromSchemaVersion = migrationsFromSchemaVersionStr
-    ? BigInt(migrationsFromSchemaVersionStr)
+    ? parseInt(migrationsFromSchemaVersionStr, 10)
     : undefined;
   await build(inputFile, outputFileDescriptorName, migrationsFromSchemaVersion);
 } catch (e) {

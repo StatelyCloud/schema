@@ -30,7 +30,7 @@ import { type SchemaType } from "./types.js";
 export async function build(
   inputPath: string,
   fileName: string,
-  migrationsFromSchemaVersion?: bigint,
+  migrationsFromSchemaVersion?: number,
 ): Promise<void> {
   const fullInputPath = path.resolve(inputPath);
 
@@ -42,13 +42,14 @@ export async function build(
   process.stderr.write(`Building schema from ${inputPath}\n`);
 
   // Use TypeScript to parse the input files.
+  // TODO: Read the tsconfig.json file and use that to set the compiler options.
   const tsOpts: ts.CompilerOptions = {
     strict: true,
     esModuleInterop: true,
     module: ts.ModuleKind.ESNext,
     target: ts.ScriptTarget.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Bundler,
-    noUnusedLocals: true,
+    noUnusedLocals: false, // Don't whine if they don't use all the imports.
     noUnusedParameters: true,
     forceConsistentCasingInFileNames: true,
     resolveJsonModule: true,
@@ -242,7 +243,7 @@ async function respond(output: DSLResponse) {
  * Select only those migrations that start at the highest version number.
  */
 function getLatestMigrations(deferredMigrations: DeferredMigration[]) {
-  let highestVersion = 0n;
+  let highestVersion = 0;
   let latestMigrations: DeferredMigration[] = [];
   for (const migration of deferredMigrations) {
     if (migration.fromSchemaVersion > highestVersion) {

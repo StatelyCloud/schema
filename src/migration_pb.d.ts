@@ -28,9 +28,9 @@ export declare type Migration = Message<"stately.schemamodel.Migration"> & {
    * from. The migration will start from this version's file descriptor and then
    * apply all the migration commands in order to produce a new schema version.
    *
-   * @generated from field: uint64 from_schema_version = 1;
+   * @generated from field: uint32 from_schema_version = 1;
    */
-  fromSchemaVersion: bigint;
+  fromSchemaVersion: number;
 
   /**
    * name is a human-readable name of the migration. This is used to identify

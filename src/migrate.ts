@@ -479,12 +479,12 @@ class Migrator {
  * @private
  */
 export class DeferredMigration {
-  fromSchemaVersion: bigint;
+  fromSchemaVersion: number;
   name: string;
   migrateFn: (m: Migrator) => void;
 
-  constructor(fromSchemaVersion: number | bigint, name: string, migrateFn: (m: Migrator) => void) {
-    this.fromSchemaVersion = BigInt(fromSchemaVersion);
+  constructor(fromSchemaVersion: number, name: string, migrateFn: (m: Migrator) => void) {
+    this.fromSchemaVersion = fromSchemaVersion;
     this.name = name;
     this.migrateFn = migrateFn;
   }
@@ -535,7 +535,7 @@ export class DeferredMigration {
  * });
  */
 export function migrate(
-  fromSchemaVersion: number | bigint,
+  fromSchemaVersion: number,
   description: string,
   migrateFn: (m: Migrator) => void,
 ): DeferredMigration {
