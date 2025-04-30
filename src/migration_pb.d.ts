@@ -181,12 +181,17 @@ export declare type MigrateAction = Message<"stately.schemamodel.MigrateAction">
       }
     | {
         /**
-         * TODO: RemoveKeyPath remove_key_path = ?;
-         *
          * @generated from field: stately.schemamodel.AddKeyPath add_key_path = 15;
          */
         value: AddKeyPath;
         case: "addKeyPath";
+      }
+    | {
+        /**
+         * @generated from field: stately.schemamodel.RemoveKeyPath remove_key_path = 16;
+         */
+        value: RemoveKeyPath;
+        case: "removeKeyPath";
       }
     | { case: undefined; value?: undefined };
 };
@@ -219,6 +224,33 @@ export declare type AddKeyPath = Message<"stately.schemamodel.AddKeyPath"> & {
  * Use `create(AddKeyPathSchema)` to create a new message.
  */
 export declare const AddKeyPathSchema: GenMessage<AddKeyPath>;
+
+/**
+ * RemoveKeyPath removes a templated key path.
+ * This key path must match one of the key paths defined
+ * in the previous schema version.
+ * Even after removal, the key path will still be populated to maintain
+ * backwards compatibility with older schema versions, however newer
+ * schema versions will not be able to use this key path.
+ *
+ * @generated from message stately.schemamodel.RemoveKeyPath
+ */
+export declare type RemoveKeyPath = Message<"stately.schemamodel.RemoveKeyPath"> & {
+  /**
+   * key_path is the key path to remove. This must be a key path that was
+   * previously added to the schema and has never been used before.
+   * This cannot be the primary key path of the item type.
+   *
+   * @generated from field: string key_path = 1;
+   */
+  keyPath: string;
+};
+
+/**
+ * Describes the message stately.schemamodel.RemoveKeyPath.
+ * Use `create(RemoveKeyPathSchema)` to create a new message.
+ */
+export declare const RemoveKeyPathSchema: GenMessage<RemoveKeyPath>;
 
 /**
  * ModifyFieldReadDefault changes the read default value of a field in an item/object type.

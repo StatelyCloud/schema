@@ -82,7 +82,7 @@ class TypeMigrator<FieldNames extends string = string> {
    * be performed synchronously when you call `stately schema put` but eventually
    * will be done in the background with the status displayed in the Stately
    * console under the Stores or Schema pages.
-   * @param keyPaths
+   * @param keyPaths - The key path templates to add.
    */
   addKeyPath(...keyPaths: string[]) {
     for (const kp of keyPaths) {
@@ -90,6 +90,30 @@ class TypeMigrator<FieldNames extends string = string> {
         create(MigrateActionSchema, {
           action: {
             case: "addKeyPath",
+            value: {
+              keyPath: kp,
+            },
+          },
+        }),
+      );
+    }
+  }
+
+  /**
+   * Mark a key path in the item type as removed since the schema version
+   * passed to the migrate function. The provided key path must have been used
+   * in the schema before. Even after removal the key path will still be
+   * populated to maintain backwards compatibility with older schema versions, however
+   * newer schema versions will not be able to use this key path.
+   * The primary key path of the item type cannot be removed.
+   * @param keyPaths - The key path templates to remove.
+   */
+  removeKeyPath(...keyPaths: string[]) {
+    for (const kp of keyPaths) {
+      this.command.actions.push(
+        create(MigrateActionSchema, {
+          action: {
+            case: "removeKeyPath",
             value: {
               keyPath: kp,
             },
