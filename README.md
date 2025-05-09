@@ -1,12 +1,14 @@
 # StatelyDB Schema Language
 
-This is a TypeScript domain-specific language (DSL) for generating Stately Schemas. You use schemas to define the shape of your data model in StatelyDB, including validation, types, and other database configuration such as key paths and indexes. It is meant to be used with the `stately` CLI, e.g. `stately schema put index.ts`.
+StatelyDB is a document database built on top of DynamoDB. It uses an elastic schema to allow you to update your data model at any time, with automatic backwards and forwards compatibility.
+
+This is a TypeScript domain-specific language (DSL) for generating StatelyDB Schemas. You use schemas to define the shape of your data model in StatelyDB, including validation, types, and other database configuration such as key paths and indexes. You can also use migrations to change your data model, automatically preserving backwards and forwards compatibility with existing schema versions. It is meant to be used with the `stately` CLI, e.g. `stately schema put index.ts`.
 
 # How it's used
 
-1. Create a `package.json` and add a dependency on `@stately-cloud/schema` (e.g. `npm init`, `npm i @stately-cloud/schema`)
-2. Create a `tsconfig.json` for your schema. This is necessary to get good autocomplete in VSCode.
-3. Create your schema files, each of which is a TypeScript (`.ts`) file. These import from `@stately-cloud/schema` to get types and builder functions, and export their types.
-4. Run `stately schema validate index.ts` to check your schema.
-5. Run `stately schema put --schema-id 12345 --message "an update message" index.ts` to upload the schema to your store.
-6. Run `stately schema generate --language typescript index.ts --out <output-dir>` to generate typed models for your schema.
+1. Follow our [Getting Started](https://docs.stately.cloud/guides/getting-started/) guide to install the Stately CLI.
+1. Run `stately schema init myschema` to create a new schema in the folder `myschema`.
+1. Develop your schema in TypeScript (`.ts`) files. These import from `@stately-cloud/schema` to get types and builder functions.
+1. Run `stately schema validate myschema/index.ts` to check your schema.
+1. Run `stately schema put --schema-id 12345 --message "an update message" myschema/index.ts` to upload the schema to your store.
+1. Run `stately schema generate --language typescript --schema-id 12345 <output-dir>` to generate typed models for your schema.

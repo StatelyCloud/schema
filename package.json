@@ -1,11 +1,11 @@
 {
   "name": "@stately-cloud/schema",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "engines": {
     "node": ">=18.20"
   },
   "author": "Stately Cloud <support@stately.cloud> (https://stately.cloud/)",
-  "description": "Schema language for StatelyDB",
+  "description": "Schema Language for StatelyDB, a document database built on top of DynamoDB with an elastic schema that allows you to change your data model any time with automatic backwards compatibility.",
   "types": "dist/index.d.ts",
   "module": "dist/index.js",
   "type": "module",
@@ -14,6 +14,16 @@
     "README.md",
     "LICENSE.txt",
     "dist/**"
+  ],
+  "homepage": "https://docs.stately.cloud/schema/builder/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/StatelyCloud/schema.git"
+  },
+  "keywords": [
+    "database",
+    "nosql",
+    "schema"
   ],
   "bin": "./dist/cli.js",
   "exports": {
