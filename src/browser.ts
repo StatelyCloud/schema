@@ -5,11 +5,31 @@ import { SchemaError } from "./errors.js";
 import { StatelyErrorDetailsSchema } from "./errors/error_details_pb.js";
 import { file } from "./file.js";
 import * as schema from "./index.js";
+import { Deferred, Plural } from "./index.js";
 import { DeferredMigration } from "./migrate.js";
 import { SchemaPackage } from "./package_pb.js";
 import { SchemaDefaults } from "./schema-defaults.js";
 import * as typeRegistry from "./type-registry.js";
+import { resolvePlural } from "./type-util.js";
 import { type SchemaType } from "./types.js";
+
+// executeCommonJS is a fun lil thing. it allows us to execute compiled CommonJS in the browser by injecting
+// a require function that returns the dependencies we pass in. We should only ever need to inject our library.
+const executeCommonJS = (code: string, dependencies: Record<any, any> = {}): any => {
+  const module = { exports: {} };
+  const require = (name: string): any =>
+    dependencies[name] ||
+    (() => {
+      throw new Error(`Module ${name} not found`);
+    })();
+
+  // eslint-disable-next-line @typescript-eslint/no-implied-eval
+  const moduleFunction = new Function("module", "exports", "require", code);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  moduleFunction(module, module.exports, require);
+
+  return module.exports;
+};
 
 /**
  * The build function is used by a browser to build a binary DSLResponse file from
@@ -32,12 +52,14 @@ export function build(
   // we generate.
   const packageName = fileName ? `stately.generated.${fileName}` : "stately.generated";
 
+  let exportedValues: {
+    // Deferred because the exported value may be a function that returns a type, instead of the type itself.
+    // Plural because the function may return multiple types (currently only done from tests).
+    [name: string]: Deferred<Plural<SchemaType>> | DeferredMigration;
+  };
   try {
+    exportedValues = executeCommonJS(jsSource, { [pkg.name]: schema }) as typeof exportedValues;
     // Now run the jsSource in the browser.
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
-    const fn = new Function("schema", jsSource);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    fn(schema);
   } catch (e) {
     // We don't want to include the stack here, so we just return the error message.
     return respondWithError(
@@ -57,34 +79,33 @@ export function build(
   const schemaTypes = getAllTypes();
   const schemaDefaults = getSchemaDefaults();
 
-  // TODO: Implement this.
-  // // Also look through the exported values for more types. This is mostly to
-  // // catch types that were declared as functions that weren't then used
-  // // elsewhere.
-  // for (const value of Object.values(exportedValues)) {
-  //   if (typeof value === "function" && value.length === 0) {
-  //     const maybeTypes = value();
-  //     for (const maybeType of resolvePlural(maybeTypes)) {
-  //       if (
-  //         maybeType &&
-  //         typeof maybeType === "object" &&
-  //         "type" in maybeType &&
-  //         ["item", "object", "enum", "alias"].includes(maybeType.type)
-  //       ) {
-  //         if (schemaTypes.includes(maybeType)) {
-  //           // This type has already been registered, so skip it.
-  //           continue;
-  //         }
-  //         schemaTypes.push(maybeType);
-  //       }
-  //     }
-  //   }
-  // }
+  // Also look through the exported values for more types. This is mostly to
+  // catch types that were declared as functions that weren't then used
+  // elsewhere.
+  for (const value of Object.values(exportedValues)) {
+    if (typeof value === "function" && value.length === 0) {
+      const maybeTypes = value();
+      for (const maybeType of resolvePlural(maybeTypes)) {
+        if (
+          maybeType &&
+          typeof maybeType === "object" &&
+          "type" in maybeType &&
+          ["item", "object", "enum", "alias"].includes(maybeType.type)
+        ) {
+          if (schemaTypes.includes(maybeType)) {
+            // This type has already been registered, so skip it.
+            continue;
+          }
+          schemaTypes.push(maybeType);
+        }
+      }
+    }
+  }
 
   // Process into a SchemaPackage
-  let pkg: SchemaPackage;
+  let sPkg: SchemaPackage;
   try {
-    pkg = file(schemaTypes, schemaDefaults, fileName, packageName);
+    sPkg = file(schemaTypes, schemaDefaults, fileName, packageName);
   } catch (e) {
     if (e instanceof SchemaError) {
       const output = create(DSLResponseSchema, {
@@ -92,7 +113,11 @@ export function build(
       });
       return respond(output);
     } else {
-      return respondWithError(e, "SchemaCode", "An error occurred while running your schema code.");
+      return respondWithError(
+        e,
+        "SchemaCode",
+        "An error occurred while evaluating your schema code",
+      );
     }
   }
 
@@ -106,7 +131,7 @@ export function build(
   const migrations = migrationsFromTargetVersions.map((migration) => migration.build());
 
   const output = create(DSLResponseSchema, {
-    package: pkg,
+    package: sPkg,
     migrations: migrations,
   });
   return respond(output);
