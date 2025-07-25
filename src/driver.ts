@@ -1,5 +1,6 @@
 import { create, toBinary } from "@bufbuild/protobuf";
 import { readFile } from "node:fs/promises";
+import { findPackageJSON } from "node:module";
 import path from "node:path";
 import process from "node:process";
 import { register } from "tsx/esm/api";
@@ -33,6 +34,38 @@ export async function build(
   migrationsFromSchemaVersion?: number,
 ): Promise<void> {
   const fullInputPath = path.resolve(inputPath);
+
+  // Load the input schema file's Node package to make sure it is a valid
+  try {
+    const schemaPackageJsonPath = findPackageJSON(fullInputPath, import.meta.url);
+    if (!schemaPackageJsonPath) {
+      await respondWithError(
+        new Error(`Could not find package.json for schema package at ${fullInputPath}`),
+        "SchemaPackageJson",
+        "The schema must be in a package with a package.json file.",
+      );
+      return;
+    }
+    // Read the package.json file to get the schema ID.
+    const packageJson = JSON.parse((await readFile(schemaPackageJsonPath)).toString("utf8")) as {
+      type?: string;
+    };
+    if (packageJson.type !== "module") {
+      await respondWithError(
+        new Error(`The package.json file at ${schemaPackageJsonPath} must have "type": "module"`),
+        "SchemaPackageType",
+        'The schema package must be an ES module, so it must have "type": "module" in its package.json.',
+      );
+      return;
+    }
+  } catch (e) {
+    await respondWithError(
+      e,
+      "SchemaPackageJson",
+      "An error occurred while finding the package.json file for your schema.",
+    );
+    return;
+  }
 
   // We need to be able to generate unique package names for each schema file so that
   // types do not collide in proto registries. (e.g. My app uses two different unrelated
@@ -224,7 +257,7 @@ async function respondWithError(e: unknown, statelyCode: string, message: string
 }
 
 async function respond(output: DSLResponse) {
-  // Get the version of the DSL from the package.json
+  // Get the version of the @stately-cloud/schema package from its package.json
   const packageJson = JSON.parse(
     (await readFile(new URL("../package.json", import.meta.url))).toString("utf8"),
   ) as { version: string };
