@@ -167,6 +167,43 @@ export interface KeyPathConfig {
    * which defaults to `true`.
    */
   versioned?: boolean;
+
+  /**
+   * A list of additional indexes that should be maintained when persisting
+   * this key path. Index key paths have a similar format to item key paths
+   * with an additional segment to indicate which index is being referenced,
+   * allowing you to extend StatelyDB single-table design semantics into your
+   * indexes as well! StatelyDB supports two types of indexes:
+   *
+   * - Group-local indexes, which are optimized for sorting items that already belong to
+   *   the same group. These indexes are strongly consistent and have no uniqueness constraint.
+   *   To use one of these indexes, start a key path with the segment `/@LSI-{1-4}` which
+   *   identifies which group-local index to use, followed by the rest of the path that
+   *   should be used as the sort key for the index. For example:
+   *
+   *     keyPath: {
+   *       path:    `/orgs-:org_id/users-:user_id`,
+   *       indexes: `/@LSI-1/userEmail-:user_email`
+   *     }
+   *
+   *   Uses the first group-local index with a sort key of `/userEmail-:email`.
+   *
+   *   Note: Group-local indexes inherit the partition key of the parent key path.
+   *   This partition key is required when using list APIs and should be prepended to the
+   *   LSI key path. In the example above, the partition key is `/orgs-:org_id`, so a
+   *   fully-formed index path looks like: `/orgs-:org_id/@LSI-1/userEmail-:user_email`.
+   *   For more about this read https://docs.stately.cloud/api/list/.
+   *
+   * - Global, eventually consistent indexes, which are optimized for queries that span
+   *   multiple items in different groups. These indexes are a lot like adding an
+   *   item-level key path, but are eventually consistent and have no uniqueness requirement.
+   *   In a subset of cases these indexes can be more cost-effective than item-level key paths.
+   *   To use a global index, create a new key-path prefixed with `/@GSI-{1-20}`
+   *   this key path must be fully formed with a partition key and sort key.
+   *   Before using one of these indexes, please consult with Stately support to ensure
+   *   it is the right fit for your use case.
+   */
+  indexes?: Plural<PathTemplate>;
 }
 
 /**

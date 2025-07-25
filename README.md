@@ -1,6 +1,6 @@
 # StatelyDB Schema Language
 
-StatelyDB is a document database built on top of DynamoDB. It uses an elastic schema to allow you to update your data model at any time, with automatic backwards and forwards compatibility.
+StatelyDB is a document database built on top of DynamoDB. It uses Elastic Schema to allow you to update your data model at any time, with automatic backwards and forwards compatibility.
 
 This is a TypeScript domain-specific language (DSL) for generating StatelyDB Schemas. You use schemas to define the shape of your data model in StatelyDB, including validation, types, and other database configuration such as key paths and indexes. You can also use migrations to change your data model, automatically preserving backwards and forwards compatibility with existing schema versions. It is meant to be used with the `stately` CLI, e.g. `stately schema put index.ts`.
 

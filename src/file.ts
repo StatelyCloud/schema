@@ -8,6 +8,7 @@ import {
   FromMetadata,
   InitialValue,
   MessageOptions_Index,
+  MessageOptions_IndexConfigSchema,
   MessageOptions_IndexSchema,
   MessageOptions_KeyPath,
   MessageOptions_KeyPathSchema,
@@ -309,6 +310,11 @@ function buildKeyPaths(
     const k = create(MessageOptions_KeyPathSchema, {
       pathTemplate: keyConfig.path,
       supportedFeatureFlags: 0,
+      indexConfigs: keyConfig.indexes
+        ? resolvePlural(keyConfig.indexes).map((pathTemplate) =>
+            create(MessageOptions_IndexConfigSchema, { pathTemplate }),
+          )
+        : undefined,
     });
     const syncable = keyConfig.syncable ?? itemType.syncable ?? schemaDefaults.syncable ?? true;
     const versioned = keyConfig.versioned ?? itemType.versioned ?? schemaDefaults.syncable ?? true;
