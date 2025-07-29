@@ -1,6 +1,6 @@
 import { create, toBinary } from "@bufbuild/protobuf";
-import { readFile } from "node:fs/promises";
-import { findPackageJSON } from "node:module";
+import { constants } from "node:fs";
+import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { register } from "tsx/esm/api";
@@ -15,6 +15,42 @@ import { SchemaPackage } from "./package_pb.js";
 import { SchemaDefaults } from "./schema-defaults.js";
 import { Deferred, Plural, resolvePlural } from "./type-util.js";
 import { type SchemaType } from "./types.js";
+
+/**
+ * Check if an error is a "file doesn't exist" error (ENOENT)
+ */
+function isFileNotFoundError(err: unknown): boolean {
+  return err instanceof Error && (err as NodeJS.ErrnoException).code === "ENOENT";
+}
+
+/**
+ * Native implementation of findPackageJSON that walks up the directory tree
+ * to find a package.json file.
+ */
+async function findPackageJSON(startPath: string): Promise<string | null> {
+  let currentDir = path.dirname(startPath);
+  while (true) {
+    const packageJsonPath = path.join(currentDir, "package.json");
+    try {
+      await access(packageJsonPath, constants.F_OK);
+      return packageJsonPath;
+    } catch (err: unknown) {
+      // If it's not a "file doesn't exist" error, re-throw it
+      if (!isFileNotFoundError(err)) {
+        throw err;
+      }
+      // File doesn't exist, continue to parent directory
+    }
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir) {
+      // We've reached the root directory and didn't find package.json
+      break;
+    }
+    currentDir = parentDir;
+  }
+
+  return null;
+}
 
 /**
  * The build function is used by the CLI to build a binary DSLResponse file from
@@ -37,7 +73,7 @@ export async function build(
 
   // Load the input schema file's Node package to make sure it is a valid
   try {
-    const schemaPackageJsonPath = findPackageJSON(fullInputPath, import.meta.url);
+    const schemaPackageJsonPath = await findPackageJSON(fullInputPath);
     if (!schemaPackageJsonPath) {
       await respondWithError(
         new Error(`Could not find package.json for schema package at ${fullInputPath}`),
