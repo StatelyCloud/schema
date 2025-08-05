@@ -108,7 +108,6 @@ export async function build(
   // schemas, cpschema, and testschema). To do this we will add the file name to the package
   // we generate.
   const packageName = fileName ? `stately.generated.${fileName}` : "stately.generated";
-  process.stderr.write(`Building schema from ${inputPath}\n`);
 
   // Use TypeScript to parse the input files.
   // TODO: Read the tsconfig.json file and use that to set the compiler options.

@@ -1,6 +1,6 @@
 {
   "name": "@stately-cloud/schema",
-  "version": "0.34.2",
+  "version": "0.34.3",
   "engines": {
     "node": ">=20"
   },
